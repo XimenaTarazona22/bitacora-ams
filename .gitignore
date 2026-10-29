@@ -1,0 +1,6 @@
+node_modules/
+dist/
+muestras/
+*.xlsx
+!fixtures/*.xlsx
+*.log
