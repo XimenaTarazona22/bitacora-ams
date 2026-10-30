@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/renombrar.mjs",
     "test": "vitest run",
-    "fixture": "node scripts/generarFixture.mjs"
+    "test:e2e": "playwright test --grep-invert \"@lento|@capturas\"",
+    "rendimiento": "playwright test --grep @lento",
+    "fixture": "node scripts/generarFixture.mjs",
+    "capturas": "playwright test --grep @capturas"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
@@ -19,6 +22,8 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",
     "@types/pdfmake": "^0.3.3",
     "@types/react": "^19.3.0",

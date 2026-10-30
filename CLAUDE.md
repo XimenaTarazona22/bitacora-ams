@@ -12,7 +12,7 @@ App web local (un solo `BitacoraAMS.html`, sin servidor ni red) que LEE la bitá
 ## Stack
 Vite + React + TypeScript estricto · `vite-plugin-singlefile` (salida `dist/index.html`, renombrar a `BitacoraAMS.html` en la entrega) · SheetJS desde `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` · Vitest. Pendientes por fase: pdfmake, JSZip, Recharts, Playwright.
 
-Comandos: `npm test` · `npm run build` · `npm run fixture` (regenera `fixtures/bitacora-sintetica.xlsx`).
+Comandos: `npm test` (Vitest) · `npm run build` (genera `dist/BitacoraAMS.html`) · `npm run test:e2e` (prueba de humo con Playwright sobre el HTML final desde `file://`, usa el Edge del sistema; requiere haber compilado antes) · `npm run rendimiento` (40 hojas × 3.000 filas) · `npm run capturas` (regenera `docs/capturas/` con el libro sintético) · `npm run fixture`.
 
 ## Decisiones técnicas
 - El Worker se importa con `?worker&inline` (queda dentro del HTML; un worker en archivo aparte no carga desde `file://`).
@@ -28,6 +28,12 @@ Comandos: `npm test` · `npm run build` · `npm run fixture` (regenera `fixtures
 - `src/dominio/informe.ts` arma el modelo (filas, acumulados, resúmenes, verificación previa); `src/pdf/informeCliente.ts` lo convierte en el documento. Los resúmenes editados se guardan en IndexedDB por cliente, caso y periodo.
 - Acumulado = todas las horas del caso hasta el fin del periodo (incluye fin de semana), igual que «Buscar caso».
 
+## Verificado en la entrega
+- Humo desde `file://` en Edge: carga el libro, muestra el tablero, genera PDF y .zip, **0 errores de consola y 0 peticiones de red**. axe (WCAG 2 A/AA): sin violaciones en las 5 secciones. Sin desbordamiento horizontal a 390 px.
+- Rendimiento: 120.000 registros (68 MB) cargan en ~3,6 s; mayor congelación del hilo principal ~450 ms (render final).
+- `file://` en Edge: contexto seguro, `showOpenFilePicker` disponible e IndexedDB persiste tras recargar. La reconexión real con el archivo (selector del sistema) no se puede automatizar.
+- OPFS no funciona en `file://` (no se usa).
+
 ## Estructura
 ```
 src/dominio/   tipos, normalizar, leerLibro (puro, testeable en Node)
@@ -35,7 +41,9 @@ src/worker/    leerBitacora.ts (envuelve leerLibro)
 src/ui/        pantallas y componentes
 tests/         Vitest (la prueba de aceptación solo corre si existe muestras/Bitácora Servicios AMS.xlsx)
 fixtures/      Excel sintético (sí se sube a git)
-scripts/       generarFixture.mjs
+scripts/       generarFixture.mjs, renombrar.mjs
+e2e/           Playwright (humo, accesibilidad, responsivo, rendimiento @lento, capturas @capturas)
+docs/capturas/ imágenes del LEEME (libro sintético)
 ```
 
 ## Valores de aceptación (copia real, semana lun 19 – vie 23 oct 2026)

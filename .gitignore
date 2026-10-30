@@ -4,3 +4,5 @@ muestras/
 *.xlsx
 !fixtures/*.xlsx
 *.log
+test-results/
+playwright-report/

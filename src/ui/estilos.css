@@ -173,3 +173,9 @@ h3 { font-size: 15px; margin: 20px 0 8px; }
 .nota h2 { margin-bottom: 8px; }
 @media (max-width: 1100px) { .informe { grid-template-columns: 1fr; } .informe-vista { position: static; height: 70vh; } }
 .informe .campo textarea { font-family: inherit; font-size: 14px; }
+
+/* Objetivos táctiles de 44 px */
+th button { min-height: 44px; align-items: center; }
+.enlace { position: relative; }
+.enlace::after { content: ''; position: absolute; inset: -13px -6px; } /* amplía el área de clic sin mover el texto */
+.campo input[type='date'], .campo input[type='file'] { min-height: 44px; padding: 8px 12px; border: 1px solid var(--borde); border-radius: 8px; background: #fff; }
