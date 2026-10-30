@@ -6,7 +6,9 @@ import {
   type OpcionesInforme, CONTENIDO_DEFECTO, claveResumen, clientesDelPeriodo, construirInforme, nombreArchivoInforme,
   opcionesPorDefecto, separarCodigos, verificarInforme,
 } from '../dominio/informe';
-import { type Periodo, type Rango, etiquetaLarga, hoyISO, rangoCompleto, semanaLV } from '../dominio/periodos';
+import { tecnologiasUnicas } from '../dominio/agregaciones';
+import { tecnologiaDe } from '../dominio/control';
+import { type Periodo, type Rango, enRango, etiquetaLarga, hoyISO, rangoCompleto, semanaLV } from '../dominio/periodos';
 import type { Registro } from '../dominio/tipos';
 import { crearPdf, empaquetarZip } from '../pdf/informeCliente';
 import { descargarBlob } from './descargar';
@@ -19,6 +21,8 @@ export interface PresetInforme {
 
 interface Props {
   registros: Registro[];
+  /** Si el Control seguimiento AMS está conectado (habilita el filtro y la columna de tecnología). */
+  hayTecnologia: boolean;
   cfg: ConfigApp;
   logo: string | null;
   periodo: Periodo;
@@ -34,6 +38,7 @@ const ETIQUETAS_CONTENIDO: [keyof typeof CONTENIDO_DEFECTO, string][] = [
   ['detallePorDia', 'Detalle por día'],
   ['consultor', 'Nombre del consultor'],
   ['grafica', 'Gráfica de horas por día'],
+  ['tecnologia', 'Columna de tecnología'],
 ];
 
 function Opcion({ nombre, valor, actual, onChange, texto }: { nombre: string; valor: string; actual: string; onChange: (v: never) => void; texto: string }) {
@@ -42,7 +47,7 @@ function Opcion({ nombre, valor, actual, onChange, texto }: { nombre: string; va
   );
 }
 
-export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }: Props) {
+export function Informe({ registros: todos, cfg, logo, periodo, preset, onPresetUsado, hayTecnologia }: Props) {
   const [modo, setModo] = useState<ModoPeriodo>(periodo.modo);
   const [fecha1, setFecha1] = useState(periodo.ancla);
   const [fecha2, setFecha2] = useState(periodo.hasta ?? periodo.ancla);
@@ -55,6 +60,8 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
   const [finDeSemana, setFinDeSemana] = useState<'incluir' | 'excluir'>(cfg.sumarFinDeSemana ? 'incluir' : 'excluir');
   const [sinEstado, setSinEstado] = useState<'incluir' | 'excluir'>('incluir');
   const [nota, setNota] = useState('');
+  const [tecnologia, setTecnologia] = useState('');
+  const [separarPorTecnologia, setSeparar] = useState(false);
   const [ediciones, setEdiciones] = useState<Record<string, string>>({});
   const [edicionesListas, setEdicionesListas] = useState(false);
   const [urlVista, setUrlVista] = useState('');
@@ -85,12 +92,18 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
     onPresetUsado();
   }, [preset, onPresetUsado]);
 
+  // Con una tecnología elegida, todo el informe se arma solo con los registros de esa tecnología.
+  const tecnologiaActiva = hayTecnologia ? tecnologia : '';
+  const registros = useMemo(
+    () => (tecnologiaActiva ? todos.filter((r) => tecnologiaDe(r) === tecnologiaActiva) : todos),
+    [todos, tecnologiaActiva],
+  );
   const clientes = useMemo(() => clientesDelPeriodo(registros, rangoConFin, true), [registros, rangoConFin]);
   const clienteActivo = clientes.includes(cliente) ? cliente : clientes[0] ?? '';
 
   const opciones: OpcionesInforme = useMemo(
-    () => ({ ...opcionesPorDefecto(clienteActivo, rango, cfg), casos, solicitados, contenido, sinCaso, finDeSemana, sinEstado, nota }),
-    [clienteActivo, rango, cfg, casos, solicitados, contenido, sinCaso, finDeSemana, sinEstado, nota],
+    () => ({ ...opcionesPorDefecto(clienteActivo, rango, cfg), casos, solicitados, contenido, sinCaso, finDeSemana, sinEstado, nota, tecnologia: tecnologiaActiva }),
+    [clienteActivo, rango, cfg, casos, solicitados, contenido, sinCaso, finDeSemana, sinEstado, nota, tecnologiaActiva],
   );
   const informe = useMemo(
     () => construirInforme(registros, cfg, opciones, ediciones, hoyISO()),
@@ -136,7 +149,7 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
     setOcupado(true);
     setEstado('');
     try {
-      descargarBlob(await crearPdf(informe, cfg, logo), nombreArchivoInforme(clienteActivo, rango));
+      descargarBlob(await crearPdf(informe, cfg, logo), nombreArchivoInforme(clienteActivo, rango, tecnologiaActiva));
     } catch (e) {
       setEstado(`No se pudo generar el PDF: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -149,11 +162,18 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
     setEstado('');
     try {
       const lista = clientesDelPeriodo(registros, rango, finDeSemana === 'incluir');
+      // Un PDF por cliente o, si se pide, por cada cliente y tecnología que tenga horas en el periodo.
+      const trabajos = lista.flatMap((c) => {
+        if (!hayTecnologia || tecnologiaActiva || !separarPorTecnologia) return [{ cliente: c, tec: tecnologiaActiva }];
+        const delCliente = registros.filter((r) => r.cliente === c && r.fecha && enRango(r.fecha, rango));
+        return tecnologiasUnicas(delCliente).map((t) => ({ cliente: c, tec: t }));
+      });
       const generados: { informe: ReturnType<typeof construirInforme>; blob: Blob }[] = [];
-      for (const c of lista) {
-        setEstado(`Generando ${generados.length + 1} de ${lista.length}: ${c}…`);
-        // Un PDF por cliente: todos sus casos, con las mismas opciones de contenido y verificación.
-        const i = construirInforme(registros, cfg, { ...opciones, cliente: c, casos: 'todos', solicitados: [] }, ediciones, hoyISO());
+      for (const t of trabajos) {
+        setEstado(`Generando ${generados.length + 1} de ${trabajos.length}: ${t.cliente}${t.tec ? ` · ${t.tec}` : ''}…`);
+        const base = t.tec && !tecnologiaActiva ? registros.filter((r) => tecnologiaDe(r) === t.tec) : registros;
+        // Todos los casos del cliente, con las mismas opciones de contenido y verificación.
+        const i = construirInforme(base, cfg, { ...opciones, cliente: t.cliente, tecnologia: t.tec, casos: 'todos', solicitados: [] }, ediciones, hoyISO());
         generados.push({ informe: i, blob: await crearPdf(i, cfg, logo) });
       }
       descargarBlob(await empaquetarZip(generados), `Informes_horas_${rango.desde}_al_${rango.hasta}.zip`);
@@ -185,6 +205,15 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
                 {clientes.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
+            {hayTecnologia && (
+              <div className="campo" style={{ marginTop: 12 }}>
+                <label htmlFor="inf-tec">Tecnología</label>
+                <select id="inf-tec" value={tecnologia} onChange={(e) => setTecnologia(e.target.value)}>
+                  <option value="">Todas</option>
+                  {tecnologiasUnicas(todos).map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+            )}
             <fieldset className="grupo">
               <legend>Periodo</legend>
               <div className="controles">
@@ -236,7 +265,7 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
           <section className="tarjeta" aria-labelledby="inf-contenido">
             <h2 id="inf-contenido">Contenido del PDF</h2>
             <div className="reglas">
-              {ETIQUETAS_CONTENIDO.map(([k, t]) => (
+              {ETIQUETAS_CONTENIDO.filter(([k]) => k !== 'tecnologia' || hayTecnologia).map(([k, t]) => (
                 <label className="casilla" key={k}>
                   <input type="checkbox" checked={contenido[k]} onChange={(e) => setContenido({ ...contenido, [k]: e.target.checked })} />
                   {t}
@@ -305,6 +334,12 @@ export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }
             <button className="btn btn-primario" onClick={() => void descargar()} disabled={ocupado || !clienteActivo}>Descargar PDF</button>
             <button className="btn" onClick={() => void descargarTodos()} disabled={ocupado || clientes.length === 0}>Generar para todos los clientes</button>
           </div>
+          {hayTecnologia && !tecnologiaActiva && (
+            <label className="casilla">
+              <input type="checkbox" checked={separarPorTecnologia} onChange={(e) => setSeparar(e.target.checked)} />
+              En el .zip, un PDF por cada cliente y tecnología
+            </label>
+          )}
           {estado && <p role="status" className="subtitulo">{estado}</p>}
         </div>
 

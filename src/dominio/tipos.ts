@@ -22,6 +22,8 @@ export interface Registro {
   /** true si «Tiempo Invertido» venía vacío o inválido y se recalculó. */
   horasCalculadas: boolean;
   clasificacion: string;
+  /** Tecnología del caso según Control seguimiento AMS; vacío si no hay dato (ver aplicarTecnologia). */
+  tecnologia: string;
   contratoAnterior: string;
   actividades: string;
 }
@@ -37,7 +39,7 @@ export interface ResultadoLectura {
 /** Alertas por registro. La jornada larga es por consultor y día, ver reglas.jornadasLargas. */
 export type TipoAlerta =
   | 'sinCaso' | 'sinEstado' | 'sinActividades' | 'casoNoReconocido'
-  | 'finDeSemana' | 'horasInvalidas' | 'franjaCruzada' | 'sinFecha';
+  | 'finDeSemana' | 'horasInvalidas' | 'franjaCruzada' | 'sinFecha' | 'sinTecnologia';
 
 /** Reglas activables: las de cada registro más la jornada larga (por consultor y día). */
 export type ReglaId = TipoAlerta | 'jornadaLarga';

@@ -1,13 +1,15 @@
+import { leerControl } from '../dominio/control';
 import { leerLibro } from '../dominio/leerLibro';
 
-export type MensajeEntrada = { datos: ArrayBuffer };
+export type MensajeEntrada = { tipo?: 'bitacora' | 'control'; datos: ArrayBuffer };
 export type MensajeSalida =
-  | { ok: true; resultado: ReturnType<typeof leerLibro> }
+  | { ok: true; resultado: ReturnType<typeof leerLibro> | ReturnType<typeof leerControl> }
   | { ok: false; error: string };
 
 self.onmessage = (e: MessageEvent<MensajeEntrada>) => {
   try {
-    const salida: MensajeSalida = { ok: true, resultado: leerLibro(e.data.datos) };
+    const resultado = e.data.tipo === 'control' ? leerControl(e.data.datos) : leerLibro(e.data.datos);
+    const salida: MensajeSalida = { ok: true, resultado };
     self.postMessage(salida);
   } catch (err) {
     const salida: MensajeSalida = {

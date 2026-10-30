@@ -30,14 +30,14 @@ describe('definición del PDF', () => {
     expect(t).not.toContain('Buenas tardes');
   });
   it('las opciones apagadas no aparecen', () => {
-    const o = informe('ACH', { contenido: { horasPorCaso: true, acumulado: false, resumen: false, detallePorDia: false, consultor: false, grafica: false } });
+    const o = informe('ACH', { contenido: { horasPorCaso: true, acumulado: false, resumen: false, detallePorDia: false, consultor: false, grafica: false, tecnologia: true } });
     const t = textos(definicionInforme(o, CONFIG_DEFECTO, null).content).join('|');
     expect(t).not.toContain('Acumulado');
     expect(textos(definicionInforme(o, CONFIG_DEFECTO, null).content)).not.toContain('Consultor'); // la columna; «Consultores» del indicador sí queda
     expect(t).not.toContain('Resumen de actividades');
   });
   it('detalle por día, gráfica y nota solo si se piden', () => {
-    const o = informe('ACH', { nota: 'Nota de prueba', contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true } });
+    const o = informe('ACH', { nota: 'Nota de prueba', contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true, tecnologia: true } });
     const t = textos(definicionInforme(o, CONFIG_DEFECTO, null).content).join('|');
     expect(t).toContain('Detalle por día');
     expect(t).toContain('Horas por día');
@@ -55,13 +55,13 @@ describe('definición del PDF', () => {
 
 describe('generación real', () => {
   it('produce un PDF válido', async () => {
-    const blob = await crearPdf(informe('ACH', { contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true } }), CONFIG_DEFECTO, null);
+    const blob = await crearPdf(informe('ACH', { contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true, tecnologia: true } }), CONFIG_DEFECTO, null);
     const bytes = new Uint8Array(await blob.arrayBuffer());
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
     expect(bytes.length).toBeGreaterThan(5000);
   });
   it('genera el PDF de un caso con espacios en el nombre', async () => {
-    const blob = await crearPdf(informe('SDS', { contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true } }), CONFIG_DEFECTO, null);
+    const blob = await crearPdf(informe('SDS', { contenido: { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true, tecnologia: true } }), CONFIG_DEFECTO, null);
     expect(blob.size).toBeGreaterThan(5000);
   });
   it('un cliente sin horas también genera un PDF', async () => {
@@ -91,7 +91,7 @@ const real = 'muestras/Bitácora Servicios AMS.xlsx';
 describe.skipIf(!existsSync(real))('PDF con la copia real', () => {
   it('genera el informe de cada cliente de la semana con todo el contenido', async () => {
     const reales = leerLibro(new Uint8Array(readFileSync(real))).registros;
-    const todo = { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true };
+    const todo = { horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: true, consultor: true, grafica: true, tecnologia: true };
     const clientes = clientesDelPeriodo(reales, SEMANA, false);
     expect(clientes).toHaveLength(5);
     for (const c of clientes) {

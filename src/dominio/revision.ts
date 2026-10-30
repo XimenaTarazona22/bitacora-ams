@@ -5,7 +5,7 @@ import type { ReglaId, Registro } from './tipos';
 export const ETIQUETA_REGLA: Record<ReglaId, string> = { ...ETIQUETA_ALERTA, jornadaLarga: 'Jornada larga' };
 
 export const ORDEN_REGLAS: ReglaId[] = [
-  'sinCaso', 'sinEstado', 'sinActividades', 'casoNoReconocido', 'finDeSemana',
+  'sinCaso', 'sinEstado', 'sinActividades', 'casoNoReconocido', 'sinTecnologia', 'finDeSemana',
   'jornadaLarga', 'horasInvalidas', 'franjaCruzada', 'sinFecha',
 ];
 

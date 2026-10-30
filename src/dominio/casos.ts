@@ -90,6 +90,8 @@ export interface FichaCaso {
   cliente: string;
   tipo: string;
   titulo: string;
+  /** Tecnología del caso según el Control; vacía si no hay dato. */
+  tecnologia: string;
   consultores: string[];
   estado: string;
   estadoFecha: string | null;
@@ -132,6 +134,7 @@ export function fichaCaso(regs: Registro[], periodo: Periodo): FichaCaso | null 
     cliente: orden[0]!.cliente,
     tipo: orden.find((r) => r.tipo)?.tipo ?? '',
     titulo: orden.find((r) => r.titulo)?.titulo ?? '',
+    tecnologia: orden.find((r) => r.tecnologia)?.tecnologia ?? '',
     consultores: [...new Set(regs.map((r) => r.consultor))].sort((a, b) => a.localeCompare(b, 'es')),
     estado: ultimoConEstado?.estado ?? '',
     estadoFecha: ultimoConEstado?.fecha ?? null,

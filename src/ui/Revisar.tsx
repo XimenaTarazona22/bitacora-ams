@@ -15,6 +15,7 @@ interface Props {
   onCfg: (c: ConfigApp) => void;
   periodo: Periodo;
   onPeriodo: (p: Periodo) => void;
+  hayTecnologia: boolean;
 }
 
 const vacio = <em style={{ color: 'var(--alerta-texto)' }}>vacío</em>;
@@ -37,7 +38,9 @@ async function copiar(texto: string): Promise<boolean> {
   }
 }
 
-export function Revisar({ registros, alertas, cfg, onCfg, periodo, onPeriodo }: Props) {
+export function Revisar({ registros, alertas, cfg, onCfg, periodo, onPeriodo, hayTecnologia }: Props) {
+  // «Sin tecnología» solo tiene sentido si el Control está conectado.
+  const reglas = ORDEN_REGLAS.filter((t) => t !== 'sinTecnologia' || hayTecnologia);
   const [incluirFin, setIncluirFin] = useState(true);
   const [activos, setActivos] = useState<ReglaId[]>([]);
   const [mensaje, setMensaje] = useState('');
@@ -95,7 +98,7 @@ export function Revisar({ registros, alertas, cfg, onCfg, periodo, onPeriodo }: 
       </div>
 
       <section className="alertas" aria-label="Tipos de alerta (filtros)">
-        {ORDEN_REGLAS.filter((t) => cfg.reglasActivas[t]).map((t) => (
+        {reglas.filter((t) => cfg.reglasActivas[t]).map((t) => (
           <button key={t} className="alerta-tipo" aria-pressed={activos.includes(t)} onClick={() => alternar(t)}>
             <span className="alerta-num">{conteos[t]}</span>
             <span>{ETIQUETA_REGLA[t]}{t === 'jornadaLarga' && ` (≥ ${cfg.jornadaLarga} h)`}</span>
@@ -150,7 +153,7 @@ export function Revisar({ registros, alertas, cfg, onCfg, periodo, onPeriodo }: 
         <h2>Reglas de validación</h2>
         <p className="subtitulo" style={{ marginTop: 0 }}>Son las mismas de Configuración. Desactiva una regla para que deje de generar alertas.</p>
         <div className="reglas">
-          {ORDEN_REGLAS.map((t) => (
+          {reglas.map((t) => (
             <label key={t} className="casilla">
               <input type="checkbox" checked={cfg.reglasActivas[t]} onChange={(e) => cambiarRegla(t, e.target.checked)} />
               {ETIQUETA_REGLA[t]}

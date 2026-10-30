@@ -53,6 +53,7 @@ function tablaCasos(i: Informe, cfg: ConfigApp): Content {
   const cols = [
     { id: 'caso', titulo: 'Caso', ancho: 80, derecha: false, on: true },
     { id: 'descripcion', titulo: 'Descripción', ancho: '*' as const, derecha: false, on: true },
+    { id: 'tecnologia', titulo: 'Tecnología', ancho: 58, derecha: false, on: c.tecnologia && i.filas.some((f) => f.tecnologia) },
     { id: 'consultor', titulo: 'Consultor', ancho: 72, derecha: false, on: c.consultor },
     { id: 'estado', titulo: 'Estado', ancho: 74, derecha: false, on: true },
     { id: 'horas', titulo: 'Horas', ancho: 42, derecha: true, on: c.horasPorCaso },
@@ -65,6 +66,7 @@ function tablaCasos(i: Informe, cfg: ConfigApp): Content {
       case 'caso': return { text: f.caso, font: fuenteCaso(f.caso), fontSize: 8.5 };
       case 'descripcion': return { text: f.descripcion || '—' };
       case 'consultor': return { text: f.consultores.map((n) => nombreParaPdf(n, cfg.pdf.nombres)).join(', '), fontSize: 8.5 };
+      case 'tecnologia': return { text: f.tecnologia || '—', fontSize: 8.5 };
       case 'estado': return { text: f.estado || '—', fontSize: 8.5 };
       case 'horas': return { text: num(f.horas), alignment: 'right' };
       default: return { text: f.acumulado === null ? '—' : num(f.acumulado), alignment: 'right' };
@@ -171,7 +173,7 @@ export function definicionInforme(i: Informe, cfg: ConfigApp, logo: string | nul
 
   const contenido: Content[] = [
     { text: `${o.cliente} · Horas invertidas por caso`, fontSize: 16, bold: true, color: AZUL },
-    { text: etiquetaLarga(o.rango), fontSize: 10.5, color: TENUE, margin: [0, 2, 0, 12] },
+    { text: o.tecnologia ? `${etiquetaLarga(o.rango)} · Tecnología: ${o.tecnologia}` : etiquetaLarga(o.rango), fontSize: 10.5, color: TENUE, margin: [0, 2, 0, 12] },
     indicadores(i),
     i.filas.length > 0 ? tablaCasos(i, cfg) : { text: 'No hay horas registradas para este cliente en el periodo.', italics: true, color: TENUE },
   ];
@@ -221,7 +223,7 @@ export async function empaquetarZip(informes: { informe: Informe; blob: Blob }[]
   const zip = new JSZip();
   const usados = new Set<string>();
   for (const { informe, blob } of informes) {
-    let nombre = nombreArchivoInforme(informe.opciones.cliente, informe.opciones.rango);
+    let nombre = nombreArchivoInforme(informe.opciones.cliente, informe.opciones.rango, informe.opciones.tecnologia);
     for (let n = 2; usados.has(nombre); n++) nombre = nombre.replace(/(_\d+)?\.pdf$/, `_${n}.pdf`);
     usados.add(nombre);
     zip.file(nombre, blob);

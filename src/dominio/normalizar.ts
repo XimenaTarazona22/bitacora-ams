@@ -146,6 +146,7 @@ export function filaARegistro(
     horas,
     horasCalculadas,
     clasificacion: t('clasificacion'),
+    tecnologia: '',
     contratoAnterior: t('contratoAnterior'),
     actividades: t('actividades'),
   };

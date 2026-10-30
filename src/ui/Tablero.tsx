@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
-  type FilaCaso, casosDelPeriodo, filtrar, horasFinDeSemana, indicadores, mapaCalor, sumarPor, valoresUnicos,
+  type FilaCaso, casosDelPeriodo, filtrar, horasFinDeSemana, indicadores, mapaCalor, sumarPor, tecnologiasUnicas, valoresUnicos,
 } from '../dominio/agregaciones';
 import type { ConfigApp } from '../dominio/config';
+import { SIN_TECNOLOGIA, tecnologiaDe } from '../dominio/control';
 import { estadoSinPrefijo, formatearHoras, formatearNumero } from '../dominio/formato';
 import {
   type Periodo, diasDelRango, etiquetaDiaCorta, lunesDe, rangoCompleto, rangoPeriodo,
@@ -24,15 +25,18 @@ interface Props {
   onActualizar: () => void;
   onVerRevision: () => void;
   onVerCaso: (caso: string) => void;
+  /** Si el Control seguimiento AMS está conectado (habilita filtro, gráfica y columna de tecnología). */
+  hayTecnologia: boolean;
 }
 
 const MAX_COLUMNAS_DIARIAS = 14;
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-type Columna = 'caso' | 'cliente' | 'titulo' | 'consultores' | 'estado' | 'horas';
+type Columna = 'caso' | 'cliente' | 'tecnologia' | 'titulo' | 'consultores' | 'estado' | 'horas';
 const COLUMNAS: { id: Columna; titulo: string; num?: boolean }[] = [
   { id: 'caso', titulo: 'Caso' },
   { id: 'cliente', titulo: 'Cliente' },
+  { id: 'tecnologia', titulo: 'Tecnología' },
   { id: 'titulo', titulo: 'Título' },
   { id: 'consultores', titulo: 'Consultor(es)' },
   { id: 'estado', titulo: 'Último estado' },
@@ -42,19 +46,22 @@ const COLUMNAS: { id: Columna; titulo: string; num?: boolean }[] = [
 const valorColumna = (f: FilaCaso, c: Columna) => (c === 'consultores' ? f.consultores.join(', ') : f[c]);
 
 export function Tablero(p: Props) {
-  const { registros, cfg, periodo } = p;
+  const { registros, cfg, periodo, hayTecnologia } = p;
+  const columnasTabla = COLUMNAS.filter((c) => c.id !== 'tecnologia' || hayTecnologia);
   const [clientes, setClientes] = useState<string[]>([]);
+  const [tecnologias, setTecnologias] = useState<string[]>([]);
   const [consultores, setConsultores] = useState<string[]>([]);
   const [texto, setTexto] = useState('');
   const [orden, setOrden] = useState<{ col: Columna; asc: boolean }>({ col: 'horas', asc: false });
 
   const rango = rangoPeriodo(periodo);
-  const filtro = { rango, clientes, consultores, incluirFinDeSemana: cfg.sumarFinDeSemana };
+  // Sin Control conectado no hay tecnologías: el filtro se ignora aunque haya quedado una selección.
+  const filtro = { rango, clientes, consultores, tecnologias: hayTecnologia ? tecnologias : [], incluirFinDeSemana: cfg.sumarFinDeSemana };
   const filtroCompleto = { ...filtro, rango: rangoCompleto(periodo), incluirFinDeSemana: true };
 
   const regs = filtrar(registros, filtro);
   // Los registros sin fecha no tienen periodo: siempre cuentan como por revisar.
-  const sinFecha = registros.filter((r) => !r.fecha && (clientes.length === 0 || clientes.includes(r.cliente)) && (consultores.length === 0 || consultores.includes(r.consultor)));
+  const sinFecha = registros.filter((r) => !r.fecha && (clientes.length === 0 || clientes.includes(r.cliente)) && (consultores.length === 0 || consultores.includes(r.consultor)) && (!filtro.tecnologias.length || filtro.tecnologias.includes(tecnologiaDe(r))));
   const regsCompletos = [...filtrar(registros, filtroCompleto), ...sinFecha];
 
   const ind = indicadores(regs, cfg);
@@ -89,8 +96,8 @@ export function Tablero(p: Props) {
 
   function exportar() {
     exportarExcel(`Casos_${rango.desde}_al_${rango.hasta}.xlsx`, 'Casos', [
-      ['Caso', 'Cliente', 'Título', 'Consultor(es)', 'Último estado', 'Horas', 'Registros'],
-      ...casos.map((f) => [f.sinCaso ? 'Sin caso' : f.caso, f.cliente, f.titulo, f.consultores.join(', '), estadoSinPrefijo(f.estado), f.horas, f.registros]),
+      ['Caso', 'Cliente', ...(hayTecnologia ? ['Tecnología'] : []), 'Título', 'Consultor(es)', 'Último estado', 'Horas', 'Registros'],
+      ...casos.map((f) => [f.sinCaso ? 'Sin caso' : f.caso, f.cliente, ...(hayTecnologia ? [f.tecnologia || SIN_TECNOLOGIA] : []), f.titulo, f.consultores.join(', '), estadoSinPrefijo(f.estado), f.horas, f.registros]),
     ]);
   }
 
@@ -107,6 +114,7 @@ export function Tablero(p: Props) {
       <div className="controles">
         <ControlPeriodo periodo={periodo} onPeriodo={p.onPeriodo} />
         <MultiSelect etiqueta="Cliente" opciones={valoresUnicos(registros, 'cliente')} seleccion={clientes} onCambio={setClientes} />
+        {hayTecnologia && <MultiSelect etiqueta="Tecnología" opciones={tecnologiasUnicas(registros)} seleccion={tecnologias} onCambio={setTecnologias} />}
         <MultiSelect etiqueta="Consultor" opciones={valoresUnicos(registros, 'consultor')} seleccion={consultores} onCambio={setConsultores} />
         <button className="btn" onClick={p.onActualizar}>Actualizar</button>
       </div>
@@ -145,6 +153,12 @@ export function Tablero(p: Props) {
           <h2>Horas por tipo de servicio</h2>
           <BarrasHorizontales datos={sumarPor(regs, 'tipo')} formato={cfg.formatoHoras} />
         </div>
+        {hayTecnologia && (
+          <div className="tarjeta">
+            <h2>Horas por tecnología</h2>
+            <BarrasHorizontales datos={sumarPor(regs, 'tecnologia')} formato={cfg.formatoHoras} />
+          </div>
+        )}
       </section>
 
       <section className="tarjeta">
@@ -205,7 +219,7 @@ export function Tablero(p: Props) {
           <table>
             <thead>
               <tr>
-                {COLUMNAS.map((c) => (
+                {columnasTabla.map((c) => (
                   <th key={c.id} scope="col" className={c.num ? 'num' : ''} aria-sort={ariaOrden(c.id)}>
                     <button onClick={() => ordenarPor(c.id)}>{c.titulo}{marca(c.id)}</button>
                   </th>
@@ -219,13 +233,14 @@ export function Tablero(p: Props) {
                     {f.sinCaso ? <span className="insignia">Sin caso</span> : <button className="enlace" onClick={() => p.onVerCaso(f.caso)}>{f.caso}</button>}
                   </td>
                   <td>{f.cliente}</td>
+                  {hayTecnologia && <td>{f.tecnologia || <span className="subtitulo">{SIN_TECNOLOGIA}</span>}</td>}
                   <td>{f.titulo || '—'}</td>
                   <td>{f.consultores.join(', ')}</td>
                   <td>{f.estado ? <span className={`pildora${/solucionad/i.test(f.estado) ? ' ok' : ''}`}>{estadoSinPrefijo(f.estado)}</span> : <em style={{ color: 'var(--alerta-texto)' }}>vacío</em>}</td>
                   <td className="num">{h(f.horas)}</td>
                 </tr>
               ))}
-              {casos.length === 0 && <tr><td colSpan={6} className="vacio">No hay casos para mostrar.</td></tr>}
+              {casos.length === 0 && <tr><td colSpan={columnasTabla.length} className="vacio">No hay casos para mostrar.</td></tr>}
             </tbody>
           </table>
         </div>

@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test --grep-invert \"@lento|@capturas\"",
     "rendimiento": "playwright test --grep @lento",
-    "fixture": "node scripts/generarFixture.mjs",
+    "fixture": "node scripts/generarFixture.mjs && node scripts/generarFixtureControl.mjs",
     "capturas": "playwright test --grep @capturas"
   },
   "dependencies": {

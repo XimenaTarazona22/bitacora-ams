@@ -36,6 +36,7 @@ export const CONFIG_DEFECTO: ConfigApp = {
     horasInvalidas: true,
     franjaCruzada: true,
     sinFecha: true,
+    sinTecnologia: true,
     jornadaLarga: true,
   },
   aliasClientes: {},

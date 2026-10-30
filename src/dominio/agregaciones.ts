@@ -1,4 +1,5 @@
 import type { ConfigApp } from './config';
+import { tecnologiaDe } from './control';
 import { clasificarCaso, redondear2 } from './normalizar';
 import { type Rango, enRango, esFinDeSemana } from './periodos';
 import type { Registro } from './tipos';
@@ -8,9 +9,12 @@ export interface Filtro {
   /** Vacío = todos. */
   clientes: string[];
   consultores: string[];
+  /** Vacío = todas; usa «Sin tecnología» para los casos sin dato. Opcional: sin Control no hay tecnologías. */
+  tecnologias?: string[];
   incluirFinDeSemana: boolean;
 }
 
+const SIN_TEC = tecnologiaDe({ tecnologia: '' });
 const suma = (regs: Registro[]) => redondear2(regs.reduce((s, r) => s + r.horas, 0));
 
 function pasaFiltros(r: Registro, f: Filtro): boolean {
@@ -18,7 +22,8 @@ function pasaFiltros(r: Registro, f: Filtro): boolean {
     r.fecha !== null &&
     enRango(r.fecha, f.rango) &&
     (f.clientes.length === 0 || f.clientes.includes(r.cliente)) &&
-    (f.consultores.length === 0 || f.consultores.includes(r.consultor))
+    (f.consultores.length === 0 || f.consultores.includes(r.consultor)) &&
+    (!f.tecnologias?.length || f.tecnologias.includes(tecnologiaDe(r)))
   );
 }
 
@@ -37,10 +42,10 @@ export interface Barra {
   horas: number;
 }
 
-export function sumarPor(regs: Registro[], campo: 'cliente' | 'tipo' | 'consultor'): Barra[] {
+export function sumarPor(regs: Registro[], campo: 'cliente' | 'tipo' | 'consultor' | 'tecnologia'): Barra[] {
   const m = new Map<string, number>();
   for (const r of regs) {
-    const nombre = r[campo] || '(vacío)';
+    const nombre = campo === 'tecnologia' ? tecnologiaDe(r) : r[campo] || '(vacío)';
     m.set(nombre, (m.get(nombre) ?? 0) + r.horas);
   }
   return [...m]
@@ -84,6 +89,8 @@ export interface FilaCaso {
   sinCaso: boolean;
   cliente: string;
   titulo: string;
+  /** Tecnología del caso; vacía si no hay dato. */
+  tecnologia: string;
   consultores: string[];
   estado: string;
   horas: number;
@@ -109,6 +116,7 @@ export function casosDelPeriodo(regs: Registro[], cfg: ConfigApp): FilaCaso[] {
       sinCaso,
       cliente: orden[0]!.cliente,
       titulo: orden.find((r) => r.titulo)?.titulo ?? '',
+      tecnologia: orden.find((r) => r.tecnologia)?.tecnologia ?? '',
       consultores: [...new Set(rs.map((r) => r.consultor))].sort((a, b) => a.localeCompare(b, 'es')),
       estado: orden.find((r) => r.estado)?.estado ?? '',
       horas: suma(rs),
@@ -143,3 +151,10 @@ export function indicadores(regs: Registro[], cfg: ConfigApp): Indicadores {
 
 export const valoresUnicos = (registros: Registro[], campo: 'cliente' | 'consultor') =>
   [...new Set(registros.map((r) => r[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+
+/** Tecnologías presentes, con «Sin tecnología» al final si algún registro no tiene dato. */
+export function tecnologiasUnicas(registros: Registro[]): string[] {
+  const set = new Set(registros.map(tecnologiaDe));
+  const sin = set.delete(SIN_TEC);
+  return [...[...set].sort((a, b) => a.localeCompare(b, 'es')), ...(sin ? [SIN_TEC] : [])];
+}

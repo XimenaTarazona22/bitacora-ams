@@ -44,6 +44,18 @@ Sabrá que quedó bien cuando el archivo pese varios MB, tenga el icono verde de
 
 Los cambios de los consultores llegan a la app cuando OneDrive ya los bajó a su computador. Si acaban de guardar, espere a que OneDrive termine de sincronizar.
 
+## 3 bis. Conectar el Control seguimiento AMS (tecnología) — opcional
+
+Si usted lleva también el archivo **Control seguimiento AMS**, la app puede leer de allí **solo el número de caso y la tecnología** (PeopleSoft, HCM, ERP, GCP…) para filtrar y separar las horas por tecnología.
+
+1. Sincronice ese archivo con OneDrive igual que la bitácora (paso 2) y márquelo **Mantener siempre en este dispositivo**.
+2. En la barra de la izquierda, bajo «Control», pulse **Conectar Control…** (o vaya a **Configuración → Control seguimiento AMS → Elegir el Control…**) y elija el archivo.
+3. Las próximas veces pulse **Conectar Control** y **Permitir**. El botón **Actualizar** vuelve a leer los dos archivos.
+
+La app cruza los casos **por número de caso** (sin importar mayúsculas, espacios finales, ni el prefijo «IM-» de Fiduprevisora). Los casos que no estén en el Control quedan como **«Sin tecnología»** y aparecen como una alerta nueva en **Registros a revisar**, para que se registren en el Control. Si el Control no está conectado, nada cambia: la app funciona igual y no muestra tecnologías.
+
+Con el Control conectado verá: el filtro **Tecnología** y la gráfica **Horas por tecnología** en el Tablero, la columna **Tecnología** en las tablas de casos, y en el **Informe para cliente** un selector de tecnología (el PDF la muestra bajo el periodo y en una columna) y la opción de generar en el .zip **un PDF por cada cliente y tecnología**.
+
 ## 4. Tablero
 
 ![Tablero semanal](docs/capturas/02-tablero.png)
@@ -92,6 +104,7 @@ Muestra los registros incompletos o raros del periodo. Cada tarjeta es un filtro
 | Alerta | Qué significa |
 |---|---|
 | Sin número de caso | caso vacío, 0, «SIN CASO», «SinCaso»… |
+| Sin tecnología | el caso es válido pero no está en el Control (solo si el Control está conectado) |
 | Sin estado / Sin actividades | el campo está vacío |
 | Caso no reconocido | tiene un valor, pero no parece un número de caso (p. ej. «INVENTARIOS») |
 | Fin de semana | registrado en sábado o domingo |

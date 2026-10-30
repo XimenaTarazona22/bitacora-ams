@@ -15,6 +15,7 @@ export const ETIQUETA_ALERTA: Record<TipoAlerta, string> = {
   horasInvalidas: 'Horas ≤ 0 o fin antes de inicio',
   franjaCruzada: 'Franja cruzada',
   sinFecha: 'Sin fecha',
+  sinTecnologia: 'Sin tecnología',
 };
 
 const clave = (r: Registro) => `${r.consultor}|${r.fecha}`;
@@ -25,7 +26,8 @@ function franjaCruzada(a: Registro, b: Registro): boolean {
 }
 
 /** Alertas por registro; solo incluye los registros con al menos una alerta activa. */
-export function evaluarAlertas(registros: Registro[], cfg: ConfigApp): Alertas {
+/** `hayControl`: si el archivo Control seguimiento AMS está cargado; sin él no se puede saber la tecnología y no se alerta. */
+export function evaluarAlertas(registros: Registro[], cfg: ConfigApp, hayControl = false): Alertas {
   const por = new Map<string, Registro[]>();
   for (const r of registros) {
     if (!r.fecha) continue;
@@ -45,6 +47,8 @@ export function evaluarAlertas(registros: Registro[], cfg: ConfigApp): Alertas {
     const clase = clasificarCaso(r.caso, cfg.casos);
     if (clase === 'sin_caso') t.push('sinCaso');
     if (clase === 'no_reconocido') t.push('casoNoReconocido');
+    // Solo casos con número válido: las actividades y los «sin caso» ya tienen su propia alerta.
+    if (hayControl && clase === 'valido' && r.tecnologia === '') t.push('sinTecnologia');
     if (r.estado === '') t.push('sinEstado');
     if (r.actividades === '') t.push('sinActividades');
     if (r.fecha === null) t.push('sinFecha');

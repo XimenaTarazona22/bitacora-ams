@@ -18,6 +18,7 @@ interface Props {
   onCaso: (c: string | null) => void;
   /** Abre el informe para cliente con este caso y todo su periodo. */
   onPdfCaso: (p: PresetInforme) => void;
+  hayTecnologia: boolean;
 }
 
 const LARGO = 180;
@@ -27,7 +28,7 @@ function Estado({ estado }: { estado: string }) {
   return <span className={`pildora${/solucionad/i.test(estado) ? ' ok' : ''}`}>{estadoSinPrefijo(estado)}</span>;
 }
 
-export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso }: Props) {
+export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso, hayTecnologia }: Props) {
   const [consulta, setConsulta] = useState(caso ?? '');
   const [activo, setActivo] = useState(-1);
   const [abierto, setAbierto] = useState(false);
@@ -148,6 +149,7 @@ export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso }: Pro
             <dl className="ficha">
               <div><dt>Cliente</dt><dd>{ficha.cliente}</dd></div>
               <div><dt>Tipo</dt><dd>{ficha.tipo || '—'}</dd></div>
+              {hayTecnologia && <div><dt>Tecnología</dt><dd>{ficha.tecnologia || 'Sin tecnología'}</dd></div>}
               <div><dt>Consultor(es)</dt><dd>{ficha.consultores.join(', ')}</dd></div>
               <div>
                 <dt>Último estado</dt>

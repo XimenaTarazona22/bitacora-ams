@@ -12,6 +12,8 @@ export interface ContenidoInforme {
   detallePorDia: boolean;
   consultor: boolean;
   grafica: boolean;
+  /** Columna Tecnología (solo se muestra si hay datos de tecnología). */
+  tecnologia: boolean;
 }
 
 export interface OpcionesInforme {
@@ -24,17 +26,19 @@ export interface OpcionesInforme {
   sinCaso: 'agrupar' | 'excluir';
   finDeSemana: 'incluir' | 'excluir';
   sinEstado: 'incluir' | 'excluir';
+  /** Tecnología del informe, solo para mostrarla (el filtro ya lo aplicó quien llama); vacía = todas. */
+  tecnologia: string;
   nota: string;
 }
 
 export const CONTENIDO_DEFECTO: ContenidoInforme = {
-  horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: false, consultor: true, grafica: false,
+  horasPorCaso: true, acumulado: true, resumen: true, detallePorDia: false, consultor: true, grafica: false, tecnologia: true,
 };
 
 export function opcionesPorDefecto(cliente: string, rango: Rango, cfg: ConfigApp): OpcionesInforme {
   return {
     cliente, rango, casos: 'todos', solicitados: [], contenido: { ...CONTENIDO_DEFECTO },
-    sinCaso: 'agrupar', finDeSemana: cfg.sumarFinDeSemana ? 'incluir' : 'excluir', sinEstado: 'incluir', nota: '',
+    sinCaso: 'agrupar', finDeSemana: cfg.sumarFinDeSemana ? 'incluir' : 'excluir', sinEstado: 'incluir', tecnologia: '', nota: '',
   };
 }
 
@@ -74,6 +78,7 @@ export interface FilaInforme {
   clave: string;
   caso: string;
   descripcion: string;
+  tecnologia: string;
   consultores: string[];
   estado: string;
   horas: number;
@@ -139,6 +144,7 @@ export function construirInforme(
       clave,
       caso: general ? '—' : clave,
       descripcion: general ? 'Actividades generales' : recientes.find((r) => r.titulo)?.titulo ?? '',
+      tecnologia: general ? '' : recientes.find((r) => r.tecnologia)?.tecnologia ?? '',
       consultores: [...new Set(rs.map((r) => r.consultor))].sort((a, b) => a.localeCompare(b, 'es')),
       estado: estadoSinPrefijo(recientes.find((r) => r.estado)?.estado ?? ''),
       horas: suma(rs),
@@ -184,8 +190,9 @@ export function nombreParaPdf(nombre: string, modo: 'inicial' | 'completo'): str
   return `${partes[0]!.charAt(0).toUpperCase()}. ${partes[partes.length - 1]}`;
 }
 
-/** Informe_horas_<Cliente>_<AAAA-MM-DD>_al_<AAAA-MM-DD>.pdf sin caracteres inválidos. */
-export function nombreArchivoInforme(cliente: string, rango: Rango): string {
-  const limpio = cliente.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').replace(/^\.+|\.+$/g, '') || 'Cliente';
-  return `Informe_horas_${limpio}_${rango.desde}_al_${rango.hasta}.pdf`;
+/** Informe_horas_<Cliente>[_<Tecnología>]_<AAAA-MM-DD>_al_<AAAA-MM-DD>.pdf sin caracteres inválidos. */
+export function nombreArchivoInforme(cliente: string, rango: Rango, tecnologia = ''): string {
+  const limpiar = (t: string) => t.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').replace(/^\.+|\.+$/g, '');
+  const partes = [limpiar(cliente) || 'Cliente', limpiar(tecnologia)].filter(Boolean);
+  return `Informe_horas_${partes.join('_')}_${rango.desde}_al_${rango.hasta}.pdf`;
 }

@@ -23,6 +23,14 @@ Comandos: `npm test` (Vitest) · `npm run build` (genera `dist/BitacoraAMS.html`
 - Cada Registro conserva `hoja` y `fila` de origen.
 - Normalización de caso: se recortan espacios (incluso al final: `TASK0050017 `), códigos alfanuméricos en mayúsculas, números sin decimales.
 
+## Control seguimiento AMS (tecnología)
+- Segundo archivo, **opcional**, con su propio handle en IndexedDB (`handle-control`) y su propio estado (`useControl`, sobre el mismo `useFuente` que la bitácora). Solo se leen el caso y la tecnología.
+- La hoja se detecta por encabezados (columna de caso: «N°Caso»/«Caso»/«ID Caso»… y «Servicio/Tecnología»/«Tecnología»); en el libro real es `Registro_Casos`.
+- Cruce **solo por número de caso** (`claveCaso`: recorta, mayúsculas, quita el prefijo `IM-`/`IM `). No se compara el cliente: el Control lista como Bolivar casos que la bitácora registra como «Davivienda HCM» (4373, 4790, 4961, 5071; los títulos coinciden).
+- Caso con varias tecnologías en el Control: se usa la primera y se avisa en Configuración (el libro real no tiene).
+- Sin tecnología = `Registro.tecnologia === ''`, que se muestra como «Sin tecnología» (`SIN_TECNOLOGIA`). La alerta `sinTecnologia` solo se evalúa con el Control conectado y solo para casos válidos (los sin caso y no reconocidos ya tienen su alerta).
+- Cobertura con la copia real: ~36 % de las horas tienen tecnología (TASK0050017 no está en el Control). El valor «9145» de una tecnología es un error de digitación del Control.
+
 ## PDF (pdfmake)
 - Fuentes: IBM Plex Sans 400/600 y Mono 400 incrustadas como **WOFF** vía `?inline` (pdfmake no lee WOFF2). El subconjunto de Plex Mono no trae el espacio: solo los códigos sin espacios usan mono (`fuenteCaso`), el resto va en Plex Sans.
 - `src/dominio/informe.ts` arma el modelo (filas, acumulados, resúmenes, verificación previa); `src/pdf/informeCliente.ts` lo convierte en el documento. Los resúmenes editados se guardan en IndexedDB por cliente, caso y periodo.

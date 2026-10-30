@@ -1,3 +1,4 @@
+import type { ResultadoControl } from '../dominio/control';
 import type { ResultadoLectura } from '../dominio/tipos';
 import { borrar, guardar, leer } from './db';
 
@@ -12,7 +13,8 @@ type SelectorArchivos = (o: {
   types: { description: string; accept: Record<string, string[]> }[];
 }) => Promise<HandleArchivo[]>;
 
-const CLAVE_HANDLE = 'handle-bitacora';
+export const CLAVE_BITACORA = 'handle-bitacora';
+export const CLAVE_CONTROL = 'handle-control';
 
 export const soportaFSA = () => typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
@@ -20,7 +22,7 @@ export const soportaFSA = () => typeof window !== 'undefined' && 'showOpenFilePi
 export class ErrorBitacora extends Error {}
 
 /** Abre el selector (solo lectura) y recuerda el archivo elegido. */
-export async function elegirArchivo(): Promise<{ handle: HandleArchivo; recordado: boolean }> {
+export async function elegirArchivo(clave = CLAVE_BITACORA): Promise<{ handle: HandleArchivo; recordado: boolean }> {
   const selector = (window as unknown as { showOpenFilePicker: SelectorArchivos }).showOpenFilePicker;
   const [handle] = await selector.call(window, {
     multiple: false,
@@ -29,22 +31,22 @@ export async function elegirArchivo(): Promise<{ handle: HandleArchivo; recordad
   if (!handle) throw new ErrorBitacora('No se eligió ningún archivo.');
   let recordado = true;
   try {
-    await guardar(CLAVE_HANDLE, handle);
+    await guardar(clave, handle);
   } catch {
     recordado = false; // p. ej. IndexedDB bloqueado al abrir desde file://
   }
   return { handle, recordado };
 }
 
-export async function cargarHandleGuardado(): Promise<HandleArchivo | null> {
+export async function cargarHandleGuardado(clave = CLAVE_BITACORA): Promise<HandleArchivo | null> {
   try {
-    return (await leer<HandleArchivo>(CLAVE_HANDLE)) ?? null;
+    return (await leer<HandleArchivo>(clave)) ?? null;
   } catch {
     return null;
   }
 }
 
-export const olvidarHandle = () => borrar(CLAVE_HANDLE).catch(() => undefined);
+export const olvidarHandle = (clave = CLAVE_BITACORA) => borrar(clave).catch(() => undefined);
 
 export const permisoConcedido = async (h: HandleArchivo) => (await h.queryPermission({ mode: 'read' })) === 'granted';
 
@@ -56,6 +58,15 @@ export function validarResultado(r: ResultadoLectura): ResultadoLectura {
   if (r.hojasConsultor.length === 0) {
     throw new ErrorBitacora(
       'El archivo no tiene ninguna hoja de consultor (hoja cuyo encabezado empiece por «Fecha» y tenga Cliente y Caso). ¿Es la bitácora correcta?',
+    );
+  }
+  return r;
+}
+
+export function validarControl(r: ResultadoControl): ResultadoControl {
+  if (!r.hoja) {
+    throw new ErrorBitacora(
+      'El archivo no tiene una hoja con las columnas «N°Caso» y «Servicio/Tecnología». ¿Es el Control seguimiento AMS?',
     );
   }
   return r;

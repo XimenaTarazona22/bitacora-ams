@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
+import { soportaFSA } from '../almacenamiento/archivo';
 import { interpretarConfig, leerLogo, serializarConfig } from '../almacenamiento/config';
 import { type ConfigApp, patronValido } from '../dominio/config';
 import { ETIQUETA_REGLA, ORDEN_REGLAS } from '../dominio/revision';
-import type { useBitacora } from './useBitacora';
+import type { useBitacora, useControl } from './useBitacora';
 
 interface Props {
   cfg: ConfigApp;
@@ -10,6 +11,8 @@ interface Props {
   logo: string | null;
   onLogo: (l: string | null) => void;
   b: ReturnType<typeof useBitacora>;
+  control: ReturnType<typeof useControl>;
+  hayTecnologia: boolean;
 }
 
 const lineas = (t: string) => t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
@@ -36,10 +39,11 @@ function AreaLista({ id, titulo, ayuda, valor, onAplicar, error }: {
   );
 }
 
-export function Configuracion({ cfg, onCfg, logo, onLogo, b }: Props) {
+export function Configuracion({ cfg, onCfg, logo, onLogo, b, control, hayTecnologia }: Props) {
   const [mensaje, setMensaje] = useState('');
   const [errorLogo, setErrorLogo] = useState('');
   const entradaJson = useRef<HTMLInputElement>(null);
+  const entradaControl = useRef<HTMLInputElement>(null);
   const [patronesMalos, setPatronesMalos] = useState<string[]>([]);
 
   const alias = Object.entries(cfg.aliasClientes).map(([k, v]) => `${k} = ${v}`);
@@ -108,6 +112,36 @@ export function Configuracion({ cfg, onCfg, logo, onLogo, b }: Props) {
         </div>
       </section>
 
+      <section className="tarjeta" aria-labelledby="cfg-control">
+        <h2 id="cfg-control">Control seguimiento AMS (tecnología)</h2>
+        <p className="subtitulo" style={{ marginTop: 0 }}>
+          Opcional. De este archivo solo se lee el número de caso y la tecnología, y se cruzan con la bitácora por número de caso.
+        </p>
+        <p>
+          {control.nombre ? <strong>{control.nombre}</strong> : 'Sin archivo conectado.'}
+          {control.resultado && ` · hoja «${control.resultado.hoja}», ${control.resultado.casos} casos con tecnología`}
+        </p>
+        {control.resultado && control.resultado.conflictos.length > 0 && (
+          <p className="nota" role="status">
+            {control.resultado.conflictos.length} caso(s) aparecen con más de una tecnología (se usa la primera):{' '}
+            {control.resultado.conflictos.slice(0, 5).map((c) => `${c.caso} (${c.tecnologias.join(' / ')})`).join(', ')}
+            {control.resultado.conflictos.length > 5 && '…'}
+          </p>
+        )}
+        {control.error && <p role="alert" className="error">{control.error}</p>}
+        {control.aviso && <p role="status" className="subtitulo">{control.aviso}</p>}
+        <div className="controles">
+          {control.estado === 'requiere_permiso' && <button className="btn btn-primario" onClick={() => void control.conectar()}>Conectar Control</button>}
+          <button className="btn" onClick={() => (soportaFSA() ? void control.elegir() : entradaControl.current?.click())}>{control.nombre ? 'Cambiar archivo…' : 'Elegir el Control…'}</button>
+          <input
+            ref={entradaControl} type="file" accept=".xlsx,.xlsm" hidden aria-label="Archivo Control seguimiento AMS"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void control.cargarArchivo(f); e.target.value = ''; }}
+          />
+          {control.estado === 'listo' && <button className="btn" onClick={() => void control.actualizar()}>Actualizar</button>}
+          <button className="btn" onClick={() => void control.desconectar()} disabled={!control.nombre}>Desconectar</button>
+        </div>
+      </section>
+
       <section className="tarjeta" aria-labelledby="cfg-reglas">
         <h2 id="cfg-reglas">Reglas de negocio</h2>
         <div className="rejilla-cfg">
@@ -155,7 +189,7 @@ export function Configuracion({ cfg, onCfg, logo, onLogo, b }: Props) {
 
         <h3>Reglas de validación activas</h3>
         <div className="reglas">
-          {ORDEN_REGLAS.map((t) => (
+          {ORDEN_REGLAS.filter((t) => t !== 'sinTecnologia' || hayTecnologia).map((t) => (
             <label key={t} className="casilla">
               <input type="checkbox" checked={cfg.reglasActivas[t]}
                 onChange={(e) => onCfg({ ...cfg, reglasActivas: { ...cfg.reglasActivas, [t]: e.target.checked } })} />
