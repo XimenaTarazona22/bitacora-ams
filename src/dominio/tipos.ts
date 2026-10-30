@@ -32,8 +32,14 @@ export interface ResultadoLectura {
   registros: Registro[];
   /** Nombres de las hojas detectadas como de consultor. */
   hojasConsultor: string[];
+  /** Registros leídos por cada hoja de consultor. */
+  hojas: { nombre: string; registros: number }[];
   /** Hojas ignoradas por no tener el encabezado de la bitácora. */
   hojasIgnoradas: string[];
+  /** Hojas saltadas a propósito (consolidados que duplicarían las horas). */
+  hojasExcluidas: string[];
+  /** Hojas con registros más allá del límite de filas leídas: faltaría información. */
+  hojasTruncadas: string[];
 }
 
 /** Alertas por registro. La jornada larga es por consultor y día, ver reglas.jornadasLargas. */

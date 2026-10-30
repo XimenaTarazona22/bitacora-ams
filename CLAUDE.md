@@ -23,6 +23,13 @@ Comandos: `npm test` (Vitest) · `npm run build` (genera `dist/BitacoraAMS.html`
 - Cada Registro conserva `hoja` y `fila` de origen.
 - Normalización de caso: se recortan espacios (incluso al final: `TASK0050017 `), códigos alfanuméricos en mayúsculas, números sin decimales.
 
+## Lectura de la bitácora real (lecciones de la copia completa)
+- La bitácora completa tiene **22 hojas de consultor + «Base de Datos»**. «Base de Datos» (462.007 filas) es un **consolidado** que repite todas las hojas: se salta siempre (`HOJAS_EXCLUIDAS_FIJAS`) o las horas se duplicarían (la semana 26–30 oct daba 543,5 h en vez de 271,75 h).
+- Hay hojas con fórmulas copiadas hasta la fila 1.048.576 (p. ej. «David P»: 254 registros reales y un millón de filas de relleno). Se lee un máximo de `FILAS_MAXIMAS` = 60.000 filas por hoja (`sheetRows`) y se avisa si hay registros reales cerca del corte (`hojasTruncadas`).
+- Una fila es un registro solo si tiene contenido real: las filas sin usar traen cliente, consultor, tipo, clasificación y «Contrato Anterior» («No») prellenados y el tiempo en 0 (fórmula). El caso 0 solo («sin caso») no cuenta como contenido.
+- Se leen solo las hojas necesarias (`bookSheets` + `sheets`): carga de ~6 s con la copia completa (antes ~40 s y 1,5 millones de registros).
+- La copia completa para pruebas está en `muestras/Bitácora completa.xlsx` (no se sube a git). Las cifras de aceptación del prompt (92 h, etc.) son de la copia de 2 consultores (`Bitácora Servicios AMS.xlsx`).
+
 ## Control seguimiento AMS (tecnología)
 - Segundo archivo, **opcional**, con su propio handle en IndexedDB (`handle-control`) y su propio estado (`useControl`, sobre el mismo `useFuente` que la bitácora). Solo se leen el caso y la tecnología.
 - La hoja se detecta por encabezados (columna de caso: «N°Caso»/«Caso»/«ID Caso»… y «Servicio/Tecnología»/«Tecnología»); en el libro real es `Registro_Casos`.

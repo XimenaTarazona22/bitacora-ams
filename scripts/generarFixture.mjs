@@ -37,6 +37,8 @@ const luis = [
   fila(LUN, 'Davivienda ERP', 'Luis Mora', 'Evolutivo', 'DAV-EVO-028', 'Titulo E', 'E - Construcción', h(11), h(13), 2, 'Franja que se cruza.'),
   fila(LUN, 'ACH', 'Luis Mora', 'Mesa Ayuda', 0, '', '', h(14), h(15), 1, ''),
   fila(MAR, 'ACH', 'Luis Mora', 'Mesa Ayuda', '  prb0043331 ', 'Titulo C', 'M - Solucionado', h(8), h(10), 2, 'Cierre.'),
+  // Filas sin usar: cliente, consultor, tipo y clasificación prellenados, tiempo en 0 (fórmula) y nada más.
+  ...Array.from({ length: 3 }, () => [null, 'ACH', 'Luis Mora', 'Mesa Ayuda', 0, null, null, null, null, null, 0, 'Hora Normal', null, null]),
 ];
 
 const libro = XLSX.utils.book_new();
@@ -54,6 +56,8 @@ agregar('Luis M', [
   ...luis.map((f) => f.concat(Array(10).fill(null), [f[10] === null ? null : f[10] * 1.75])),
 ]);
 agregar('Causa', [['Error procedimental', 'Usar cuando...']]);
+// Consolidado de todas las hojas (como «Base de Datos» en la bitácora real): leerlo duplicaría las horas.
+agregar('Base de Datos', [ENC, ...ana, ...luis.slice(0, 4)]);
 agregar('Xlat', [[], ['Cliente', 'Tipo', 'Estado']], true);
 agregar('Horas por Consultor Todos', [['Cliente', '(Todas)']]);
 agregar('Detalle1', [['Detalles para Suma de Tiempo Invertido']]);

@@ -17,6 +17,8 @@ export interface ConfigApp {
   jornadaLarga: number;
   formatoHoras: 'decimal' | 'hm';
   reglasActivas: Record<ReglaId, boolean>;
+  /** Hojas de consultor que no se usan (además de las consolidadas, que siempre se saltan). */
+  hojasExcluidas: string[];
   /** Nombre en la bitácora → nombre a mostrar (vacío por defecto: cada cliente se mantiene separado). */
   aliasClientes: Record<string, string>;
   pdf: ConfigPdf;
@@ -39,6 +41,7 @@ export const CONFIG_DEFECTO: ConfigApp = {
     sinTecnologia: true,
     jornadaLarga: true,
   },
+  hojasExcluidas: [],
   aliasClientes: {},
   pdf: { empresa: '', pie: 'Fuente: bitácora de servicios AMS · horas en decimales', papel: 'carta', nombres: 'inicial' },
 };
@@ -77,6 +80,7 @@ export function fusionarConfig(entrada: unknown): ConfigApp {
     reglasActivas: Object.fromEntries(
       (Object.keys(d.reglasActivas) as ReglaId[]).map((k) => [k, typeof reglas[k] === 'boolean' ? reglas[k] : d.reglasActivas[k]]),
     ) as Record<ReglaId, boolean>,
+    hojasExcluidas: textos(entrada.hojasExcluidas) ?? [],
     aliasClientes: Object.fromEntries(
       Object.entries(alias).filter(([k, v]) => typeof v === 'string' && k.trim() && v.trim()).map(([k, v]) => [k.trim(), (v as string).trim()]),
     ),

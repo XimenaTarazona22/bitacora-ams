@@ -28,7 +28,12 @@ export function App() {
   const [caso, setCaso] = useState<string | null>(null);
   const [preset, setPreset] = useState<PresetInforme | null>(null);
 
-  const brutos = b.resultado?.registros ?? SIN_REGISTROS;
+  const leidos = b.resultado?.registros ?? SIN_REGISTROS;
+  // Hojas que la persona usuaria decidió no usar (Configuración).
+  const brutos = useMemo(
+    () => (cfg.hojasExcluidas.length ? leidos.filter((r) => !cfg.hojasExcluidas.includes(r.hoja)) : leidos),
+    [leidos, cfg.hojasExcluidas],
+  );
   const tecnologias = control.resultado?.tecnologias ?? null;
   const hayTecnologia = tecnologias !== null;
   const registros = useMemo(
@@ -55,7 +60,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Lateral vista={vista} onVista={setVista} aRevisar={aRevisar} b={b} control={control} onActualizar={actualizarTodo} />
+      <Lateral hojasExcluidas={b.resultado ? b.resultado.hojasConsultor.filter((h) => cfg.hojasExcluidas.includes(h)).length : 0} vista={vista} onVista={setVista} aRevisar={aRevisar} b={b} control={control} onActualizar={actualizarTodo} />
       <main className="contenido">
         {vista === 'tablero' ? (
           <Tablero

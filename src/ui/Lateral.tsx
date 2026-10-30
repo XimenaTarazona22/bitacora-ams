@@ -12,6 +12,8 @@ const NAV: { id: Vista; titulo: string }[] = [
 ];
 
 interface Props {
+  /** Hojas de consultor que la persona usuaria excluyó en Configuración. */
+  hojasExcluidas: number;
   vista: Vista;
   onVista: (v: Vista) => void;
   aRevisar: number;
@@ -20,7 +22,7 @@ interface Props {
   onActualizar: () => void;
 }
 
-export function Lateral({ vista, onVista, aRevisar, b, control, onActualizar }: Props) {
+export function Lateral({ hojasExcluidas, vista, onVista, aRevisar, b, control, onActualizar }: Props) {
   const estadoSync = b.estado === 'cargando' ? 'Leyendo…' : b.leidoEn && b.resultado ? textoLectura(b.leidoEn, b.resultado.registros.length) : '';
   return (
     <aside className="lateral">
@@ -43,7 +45,10 @@ export function Lateral({ vista, onVista, aRevisar, b, control, onActualizar }: 
         <strong>Fuente de datos</strong>
         <span className="nombre">{b.nombre || 'Sin archivo'}</span>
         <span>{estadoSync}</span>
-        {b.resultado && <span>{b.resultado.hojasConsultor.length} hojas de consultor</span>}
+        {b.resultado && <span>{b.resultado.hojasConsultor.length - hojasExcluidas} hojas de consultor</span>}
+        {b.resultado && b.resultado.hojasTruncadas.length > 0 && (
+          <span role="alert" style={{ color: '#ffd8a3' }}>Faltan filas en: {b.resultado.hojasTruncadas.join(', ')}</span>
+        )}
         {b.error && <span role="alert" style={{ color: '#ffd8a3' }}>{b.error}</span>}
         <span className="nombre" style={{ marginTop: 6 }}>Control: {control.nombre || 'sin conectar'}</span>
         {control.resultado && <span>{control.resultado.casos} casos con tecnología</span>}

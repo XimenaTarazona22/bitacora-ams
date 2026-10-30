@@ -112,6 +112,40 @@ export function Configuracion({ cfg, onCfg, logo, onLogo, b, control, hayTecnolo
         </div>
       </section>
 
+      {b.resultado && (
+        <section className="tarjeta" aria-labelledby="cfg-hojas">
+          <h2 id="cfg-hojas">Hojas de consultor leídas</h2>
+          <p className="subtitulo" style={{ marginTop: 0 }}>
+            Cada hoja cuyo encabezado empieza por «Fecha» se lee sola; un consultor nuevo aparece aquí sin configurar nada.
+            Desmarque una hoja para no usarla (por ejemplo, una de prueba).
+          </p>
+          {b.resultado.hojasExcluidas.length > 0 && (
+            <p className="nota" role="status">
+              Se saltó la hoja consolidada «{b.resultado.hojasExcluidas.join('», «')}»: repite los registros de las demás hojas y duplicaría las horas.
+            </p>
+          )}
+          {b.resultado.hojasTruncadas.length > 0 && (
+            <p role="alert" className="error">
+              Hay registros más allá de la fila 60.000 en: {b.resultado.hojasTruncadas.join(', ')}. No se leyeron.
+            </p>
+          )}
+          <div className="reglas">
+            {b.resultado.hojas.map((h) => (
+              <label key={h.nombre} className="casilla">
+                <input
+                  type="checkbox"
+                  checked={!cfg.hojasExcluidas.includes(h.nombre)}
+                  onChange={(e) =>
+                    onCfg({ ...cfg, hojasExcluidas: e.target.checked ? cfg.hojasExcluidas.filter((x) => x !== h.nombre) : [...cfg.hojasExcluidas, h.nombre] })
+                  }
+                />
+                {h.nombre} ({h.registros.toLocaleString('es-CO')} registros)
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="tarjeta" aria-labelledby="cfg-control">
         <h2 id="cfg-control">Control seguimiento AMS (tecnología)</h2>
         <p className="subtitulo" style={{ marginTop: 0 }}>

@@ -104,7 +104,12 @@ export function clasificarCaso(caso: string, cfg: ConfigCasos = CONFIG_CASOS_DEF
   return 'no_reconocido';
 }
 
-/** Convierte una fila cruda en Registro; null si está totalmente vacía. */
+const CAMPOS_CON_CONTENIDO: CampoBitacora[] = [
+  'fecha', 'caso', 'titulo', 'apoyo', 'estado', 'horaInicio', 'horaFin', 'tiempo', 'actividades',
+];
+const sinValor = (v: unknown) => v == null || (typeof v === 'number' ? v === 0 : ['', '0'].includes(String(v).trim()));
+
+/** Convierte una fila cruda en Registro; null si no tiene contenido. */
 export function filaARegistro(
   fila: unknown[],
   mapa: MapaColumnas,
@@ -114,8 +119,9 @@ export function filaARegistro(
   const celda = (c: CampoBitacora): unknown => (mapa[c] === undefined ? null : fila[mapa[c]!]);
   const t = (c: CampoBitacora) => texto(celda(c));
 
-  const vacia = (Object.keys(mapa) as CampoBitacora[]).every((c) => t(c) === '');
-  if (vacia) return null;
+  // Las filas sin usar vienen con el cliente, el consultor, el tipo y la clasificación prellenados y el tiempo en 0
+  // (fórmula): eso no es un registro. El caso 0 solo («sin caso») tampoco.
+  if (CAMPOS_CON_CONTENIDO.every((c) => sinValor(celda(c)))) return null;
 
   const horaInicio = fraccionAHoras(celda('horaInicio'));
   const horaFin = fraccionAHoras(celda('horaFin'));

@@ -148,6 +148,9 @@ Con Firefox o Safari, o si el navegador bloquea el almacenamiento, la app no pue
 **Los datos no están al día.**
 Pulse **Actualizar** y revise que OneDrive haya terminado de sincronizar (icono de nubes en la barra de tareas).
 
+**¿Por qué no lee la hoja «Base de Datos»?**
+Esa hoja es un consolidado que repite los registros de todas las hojas de consultor; leerla duplicaría las horas. La app la salta sola. En **Configuración → Hojas de consultor leídas** puede ver cuántos registros trae cada hoja y desmarcar las que no quiera usar.
+
 **Los totales no coinciden con una tabla dinámica del Excel.**
 La app suma la columna **Tiempo Invertido** (si está vacía, calcula Hora Fin − Hora Inicio) y no usa la columna «HORAS TOTALES» ni el factor de 1,75. Los registros de sábado y domingo no suman por defecto.
 

@@ -17,7 +17,7 @@ describe('mensajeError', () => {
 
 describe('validarResultado', () => {
   it('rechaza libros sin hojas de consultor', () => {
-    expect(() => validarResultado({ registros: [], hojasConsultor: [], hojasIgnoradas: ['A'] })).toThrow(/hoja de consultor/);
+    expect(() => validarResultado({ registros: [], hojasConsultor: [], hojas: [], hojasIgnoradas: ['A'], hojasExcluidas: [], hojasTruncadas: [] })).toThrow(/hoja de consultor/);
   });
 });
 
