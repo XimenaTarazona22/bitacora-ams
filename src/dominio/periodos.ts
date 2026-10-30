@@ -4,11 +4,13 @@ export interface Rango {
   hasta: string;
 }
 
-export type ModoPeriodo = 'semana' | 'dia';
+export type ModoPeriodo = 'semana' | 'dia' | 'rango';
 export interface Periodo {
   modo: ModoPeriodo;
-  /** Cualquier fecha del periodo (en modo semana, la semana que la contiene). */
+  /** Cualquier fecha del periodo (en modo semana, la semana que la contiene; en modo rango, la fecha inicial). */
   ancla: string;
+  /** Fecha final; solo en modo rango. */
+  hasta?: string;
 }
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -23,6 +25,8 @@ export const sumarDias = (iso: string, n: number) => aISO(new Date(aFecha(iso).g
 export const diaSemana = (iso: string) => (aFecha(iso).getUTCDay() + 6) % 7;
 export const esFinDeSemana = (iso: string) => diaSemana(iso) >= 5;
 export const lunesDe = (iso: string) => sumarDias(iso, -diaSemana(iso));
+/** Días entre dos fechas (hasta − desde). */
+export const diasEntre = (desde: string, hasta: string) => Math.round((aFecha(hasta).getTime() - aFecha(desde).getTime()) / 864e5);
 export const enRango = (iso: string, r: Rango) => iso >= r.desde && iso <= r.hasta;
 
 /** Lunes a viernes de la semana que contiene la fecha. */
@@ -33,7 +37,8 @@ export function semanaLV(iso: string): Rango {
 
 /** Rango visible del periodo: lun–vie en semana, un solo día en vista diaria. */
 export function rangoPeriodo(p: Periodo): Rango {
-  return p.modo === 'semana' ? semanaLV(p.ancla) : { desde: p.ancla, hasta: p.ancla };
+  if (p.modo === 'semana') return semanaLV(p.ancla);
+  return { desde: p.ancla, hasta: p.modo === 'rango' ? p.hasta ?? p.ancla : p.ancla };
 }
 
 /** Igual que rangoPeriodo, pero la semana llega hasta el domingo (para contar alertas de fin de semana). */
@@ -52,6 +57,12 @@ export function diasDelRango(r: Rango, finDeSemana = false): string[] {
 /** Mueve el periodo: una semana, o un día hábil en vista diaria. */
 export function moverPeriodo(p: Periodo, sentido: 1 | -1): Periodo {
   if (p.modo === 'semana') return { ...p, ancla: sumarDias(p.ancla, 7 * sentido) };
+  if (p.modo === 'rango') {
+    // Desplaza el rango completo, conservando su duración.
+    const r = rangoPeriodo(p);
+    const dias = diasEntre(r.desde, r.hasta) + 1;
+    return { ...p, ancla: sumarDias(r.desde, dias * sentido), hasta: sumarDias(r.hasta, dias * sentido) };
+  }
   let d = sumarDias(p.ancla, sentido);
   while (esFinDeSemana(d)) d = sumarDias(d, sentido);
   return { ...p, ancla: d };
@@ -90,8 +101,12 @@ export function etiquetaSemana(r: Rango): string {
   return `${ini} – ${fin}`;
 }
 
-export const etiquetaPeriodo = (p: Periodo) =>
-  p.modo === 'semana' ? etiquetaSemana(rangoPeriodo(p)) : etiquetaDia(p.ancla);
+export function etiquetaPeriodo(p: Periodo): string {
+  if (p.modo === 'semana') return etiquetaSemana(rangoPeriodo(p));
+  if (p.modo === 'dia') return etiquetaDia(p.ancla);
+  const r = rangoPeriodo(p);
+  return r.desde === r.hasta ? etiquetaDia(r.desde) : `${etiquetaDia(r.desde)} – ${etiquetaDia(r.hasta)}`;
+}
 
 /** Fecha local de hoy como AAAA-MM-DD. */
 export function hoyISO(): string {

@@ -179,3 +179,6 @@ th button { min-height: 44px; align-items: center; }
 .enlace { position: relative; }
 .enlace::after { content: ''; position: absolute; inset: -13px -6px; } /* amplía el área de clic sin mover el texto */
 .campo input[type='date'], .campo input[type='file'] { min-height: 44px; padding: 8px 12px; border: 1px solid var(--borde); border-radius: 8px; background: #fff; }
+
+.fecha-rango { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--suave); }
+.fecha-rango input { min-height: 44px; border: 1px solid var(--borde); border-radius: 10px; padding: 0 10px; background: #fff; color: var(--texto); }

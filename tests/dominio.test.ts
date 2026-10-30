@@ -5,7 +5,7 @@ import { CONFIG_DEFECTO } from '../src/dominio/config';
 import { estadoSinPrefijo, formatearHoras } from '../src/dominio/formato';
 import { leerLibro } from '../src/dominio/leerLibro';
 import {
-  diasDelRango, etiquetaSemana, moverPeriodo, periodoInicial, rangoCompleto, rangoPeriodo, semanaLV,
+  diasDelRango, etiquetaPeriodo, etiquetaSemana, lunesDe, moverPeriodo, periodoInicial, rangoCompleto, rangoPeriodo, semanaLV,
 } from '../src/dominio/periodos';
 import { evaluarAlertas, jornadasLargas, resumenRevision } from '../src/dominio/reglas';
 
@@ -125,5 +125,39 @@ describe.skipIf(!existsSync(real))('aceptación del tablero con la copia real', 
     const r = resumenRevision(regs, al, rangoCompleto({ modo: 'semana', ancla: '2026-10-21' }));
     expect(r.finDeSemana).toBe(3);
     expect(r.habiles).toBe(10); // 7 sin caso + 3 casos no reconocidos (INVENTARIOS x2, Seguimiento ACH)
+  });
+});
+
+describe('periodo por rango', () => {
+  const rango = { modo: 'rango' as const, ancla: '2026-09-21', hasta: '2026-10-21' };
+  it('rango, etiqueta y desplazamiento conservando la duración', () => {
+    expect(rangoPeriodo(rango)).toEqual({ desde: '2026-09-21', hasta: '2026-10-21' });
+    expect(rangoCompleto(rango)).toEqual({ desde: '2026-09-21', hasta: '2026-10-21' });
+    expect(etiquetaPeriodo(rango)).toBe('Lun 21 sep 2026 – Mié 21 oct 2026');
+    expect(moverPeriodo(rango, 1)).toMatchObject({ ancla: '2026-10-22', hasta: '2026-11-21' });
+    expect(moverPeriodo(rango, -1)).toMatchObject({ ancla: '2026-08-21', hasta: '2026-09-20' });
+    expect(rangoPeriodo({ modo: 'rango', ancla: '2026-09-21' })).toEqual({ desde: '2026-09-21', hasta: '2026-09-21' });
+  });
+  it('mapa de calor agrupado por semana suma igual que por día', () => {
+    const regs = cargar('fixtures/bitacora-sintetica.xlsx');
+    const f = { rango: { desde: '2026-10-19', hasta: '2026-10-25' }, clientes: [], consultores: [], incluirFinDeSemana: true };
+    const sel = filtrar(regs, f);
+    const porDia = mapaCalor(sel, diasDelRango(f.rango, true));
+    const porSemana = mapaCalor(sel, ['2026-10-19'], lunesDe);
+    expect(porSemana.total).toBe(porDia.total);
+    expect(porSemana.filas.map((x) => x.total)).toEqual(porDia.filas.map((x) => x.total));
+  });
+});
+
+describe.skipIf(!existsSync('muestras/Bitácora Servicios AMS.xlsx'))('rango 21 sep – 21 oct con la copia real', () => {
+  const regs = cargar('muestras/Bitácora Servicios AMS.xlsx');
+  const f = { rango: { desde: '2026-09-21', hasta: '2026-10-21' }, clientes: [], consultores: [], incluirFinDeSemana: false };
+  it('el total del rango es la suma de sus semanas', () => {
+    const total = indicadores(filtrar(regs, f), CONFIG_DEFECTO).horas;
+    // semanas lun–vie completas dentro del rango + el tramo final lun 19 – mié 21 oct
+    const sem = (desde: string, hasta: string) => indicadores(filtrar(regs, { ...f, rango: { desde, hasta } }), CONFIG_DEFECTO).horas;
+    const partes = ['2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12'].map((d) => sem(d, semanaLV(d).hasta)).concat(sem('2026-10-19', '2026-10-21'));
+    expect(Math.round(partes.reduce((a, b) => a + b, 0) * 100) / 100).toBe(total);
+    expect(total).toBeGreaterThan(0);
   });
 });

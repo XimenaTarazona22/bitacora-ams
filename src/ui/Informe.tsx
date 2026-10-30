@@ -43,9 +43,9 @@ function Opcion({ nombre, valor, actual, onChange, texto }: { nombre: string; va
 }
 
 export function Informe({ registros, cfg, logo, periodo, preset, onPresetUsado }: Props) {
-  const [modo, setModo] = useState<ModoPeriodo>(periodo.modo === 'dia' ? 'dia' : 'semana');
+  const [modo, setModo] = useState<ModoPeriodo>(periodo.modo);
   const [fecha1, setFecha1] = useState(periodo.ancla);
-  const [fecha2, setFecha2] = useState(periodo.ancla);
+  const [fecha2, setFecha2] = useState(periodo.hasta ?? periodo.ancla);
   const [cliente, setCliente] = useState('');
   const [casos, setCasos] = useState<'todos' | 'solicitados'>('todos');
   const [solicitados, setSolicitados] = useState<string[]>([]);

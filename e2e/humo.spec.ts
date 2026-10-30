@@ -60,3 +60,17 @@ test('responsivo: sin desbordamiento horizontal en móvil', async ({ page }) => 
     expect(ancho, `${vista}: ancho ${ancho} > ${visible}`).toBeLessThanOrEqual(visible + 1);
   }
 });
+
+test('Tablero por rango de fechas: agrupa por semana y respeta Desde ≤ Hasta', async ({ page }) => {
+  await abrirConLibro(page);
+  await page.getByRole('group', { name: 'Vista' }).getByRole('button', { name: 'Rango' }).click();
+  const grupo = page.getByRole('group', { name: 'Rango de fechas' });
+  await grupo.getByLabel('Desde').fill('2026-09-21');
+  await grupo.getByLabel('Hasta').fill('2026-10-21');
+  await expect(page.getByRole('heading', { name: 'Tablero por periodo' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Horas por consultor y semana' })).toBeVisible();
+  await grupo.getByLabel('Hasta').fill('2026-09-10');
+  await expect(grupo.getByLabel('Desde')).toHaveValue('2026-09-10');
+  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(r.violations.map((x) => x.id)).toEqual([]);
+});

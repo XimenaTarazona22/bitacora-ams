@@ -61,10 +61,11 @@ export interface MapaCalor {
   total: number;
 }
 
-export function mapaCalor(regs: Registro[], dias: string[]): MapaCalor {
+/** `clave` agrupa fechas en columnas (p. ej. por semana en periodos largos); por defecto, una columna por día. */
+export function mapaCalor(regs: Registro[], dias: string[], clave: (fecha: string) => string = (f) => f): MapaCalor {
   const filas = new Map<string, number[]>();
   for (const r of regs) {
-    const i = dias.indexOf(r.fecha!);
+    const i = dias.indexOf(clave(r.fecha!));
     if (i < 0) continue;
     const f = filas.get(r.consultor) ?? dias.map(() => 0);
     f[i] = redondear2(f[i]! + r.horas);

@@ -48,7 +48,7 @@ Los cambios de los consultores llegan a la app cuando OneDrive ya los bajó a su
 
 ![Tablero semanal](docs/capturas/02-tablero.png)
 
-- **Diario / Semanal** y las flechas cambian el periodo (la semana es de lunes a viernes).
+- **Diario / Semanal / Rango** y las flechas cambian el periodo (la semana es de lunes a viernes). Con **Rango** elige las fechas **Desde** y **Hasta** (por ejemplo, del 21 de septiembre al 21 de octubre); las flechas desplazan el rango completo y, en periodos largos, el cuadro de horas se agrupa por semana.
 - **Cliente** y **Consultor** filtran; puede marcar varios.
 - Las cuatro tarjetas resumen horas, casos, clientes y los **registros a revisar** (pulse esa tarjeta para verlos).
 - El cuadro **Horas por consultor y día** pinta en naranja las jornadas largas (10 h o más por defecto).

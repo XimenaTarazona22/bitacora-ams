@@ -5,7 +5,7 @@ import {
 import type { ConfigApp } from '../dominio/config';
 import { estadoSinPrefijo, formatearHoras, formatearNumero } from '../dominio/formato';
 import {
-  type Periodo, diasDelRango, etiquetaDiaCorta, rangoCompleto, rangoPeriodo,
+  type Periodo, diasDelRango, etiquetaDiaCorta, lunesDe, rangoCompleto, rangoPeriodo,
 } from '../dominio/periodos';
 import { type Alertas, jornadasLargas, resumenRevision } from '../dominio/reglas';
 import type { Registro } from '../dominio/tipos';
@@ -25,6 +25,9 @@ interface Props {
   onVerRevision: () => void;
   onVerCaso: (caso: string) => void;
 }
+
+const MAX_COLUMNAS_DIARIAS = 14;
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 type Columna = 'caso' | 'cliente' | 'titulo' | 'consultores' | 'estado' | 'horas';
 const COLUMNAS: { id: Columna; titulo: string; num?: boolean }[] = [
@@ -58,9 +61,13 @@ export function Tablero(p: Props) {
   const revision = resumenRevision(regsCompletos, p.alertas, rangoCompleto(periodo));
   const fuera = cfg.sumarFinDeSemana ? 0 : horasFinDeSemana(registros, filtroCompleto);
   const dias = diasDelRango(rangoCompleto(periodo), cfg.sumarFinDeSemana);
-  const calor = mapaCalor(regs, dias);
+  // Periodos largos: una columna por semana (la tabla no cabría con una por día).
+  const porSemana = dias.length > MAX_COLUMNAS_DIARIAS;
+  const columnas = porSemana ? [...new Set(dias.map(lunesDe))] : dias;
+  const calor = mapaCalor(regs, columnas, porSemana ? lunesDe : undefined);
   const largas = jornadasLargas(regs, cfg.jornadaLarga);
-  const esLarga = (consultor: string, fecha: string) => largas.some((j) => j.consultor === consultor && j.fecha === fecha);
+  const clave = (f: string) => (porSemana ? lunesDe(f) : f);
+  const largasEn = (consultor: string, columna: string) => largas.filter((j) => j.consultor === consultor && clave(j.fecha) === columna).length;
   const h = (n: number) => formatearHoras(n, cfg.formatoHoras);
 
   const casos = (() => {
@@ -88,11 +95,12 @@ export function Tablero(p: Props) {
   }
 
   const esDia = periodo.modo === 'dia';
+  const titulo = esDia ? 'Tablero diario' : periodo.modo === 'rango' ? 'Tablero por periodo' : 'Tablero semanal';
 
   return (
     <>
       <header>
-        <h1>{esDia ? 'Tablero diario' : 'Tablero semanal'}</h1>
+        <h1>{titulo}</h1>
         <p className="subtitulo">{p.textoLectura} · {formatearNumero(registros.length)} registros en total</p>
       </header>
 
@@ -140,7 +148,7 @@ export function Tablero(p: Props) {
       </section>
 
       <section className="tarjeta">
-        <h2>Horas por consultor y día</h2>
+        <h2>Horas por consultor y {porSemana ? 'semana' : 'día'}</h2>
         {calor.filas.length === 0 ? (
           <p className="vacio">Sin registros en este periodo.</p>
         ) : (
@@ -149,7 +157,7 @@ export function Tablero(p: Props) {
               <thead>
                 <tr>
                   <th scope="col">Consultor</th>
-                  {dias.map((d) => <th scope="col" className="num" key={d}>{etiquetaDiaCorta(d)}</th>)}
+                  {columnas.map((d) => <th scope="col" className="num" key={d}>{porSemana ? `Sem. ${etiquetaDiaCorta(d).slice(4)} ${MESES_CORTOS[Number(d.slice(5, 7)) - 1]}` : etiquetaDiaCorta(d)}</th>)}
                   <th scope="col" className="num">Total</th>
                 </tr>
               </thead>
@@ -158,12 +166,13 @@ export function Tablero(p: Props) {
                   <tr key={f.consultor}>
                     <th scope="row" style={{ color: 'inherit', fontWeight: 500 }}>{f.consultor}</th>
                     {f.porDia.map((v, i) => {
-                      const larga = esLarga(f.consultor, dias[i]!);
-                      const alfa = Math.min(v / (cfg.jornadaLarga || 10), 1) * 0.28;
+                      const nLargas = largasEn(f.consultor, columnas[i]!);
+                      const larga = nLargas > 0;
+                      const alfa = Math.min(v / ((cfg.jornadaLarga || 10) * (porSemana ? 5 : 1)), 1) * 0.28;
                       return (
-                        <td key={dias[i]} className={`celda${larga ? ' larga' : ''}`} style={larga || v === 0 ? undefined : { background: `rgba(31,95,191,${alfa})` }}
-                          title={larga ? `Jornada larga (≥ ${cfg.jornadaLarga} h)` : undefined}>
-                          {v === 0 ? '–' : h(v)}{larga && <span className="sr-only"> jornada larga</span>}
+                        <td key={columnas[i]} className={`celda${larga ? ' larga' : ''}`} style={larga || v === 0 ? undefined : { background: `rgba(31,95,191,${alfa})` }}
+                          title={larga ? (porSemana ? `${nLargas} jornada(s) larga(s) (≥ ${cfg.jornadaLarga} h)` : `Jornada larga (≥ ${cfg.jornadaLarga} h)`) : undefined}>
+                          {v === 0 ? '–' : h(v)}{larga && <span className="sr-only"> {nLargas} jornada(s) larga(s)</span>}
                         </td>
                       );
                     })}
@@ -174,19 +183,19 @@ export function Tablero(p: Props) {
               <tfoot>
                 <tr>
                   <td>Total</td>
-                  {calor.totalesDia.map((v, i) => <td className="num" key={dias[i]}>{h(v)}</td>)}
+                  {calor.totalesDia.map((v, i) => <td className="num" key={columnas[i]}>{h(v)}</td>)}
                   <td className="num">{h(calor.total)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         )}
-        {largas.length > 0 && <p className="subtitulo">En naranja: jornadas de {cfg.jornadaLarga} h o más.</p>}
+        {largas.length > 0 && <p className="subtitulo">En naranja: {porSemana ? 'semanas con al menos una jornada' : 'jornadas'} de {cfg.jornadaLarga} h o más{porSemana ? ' (pase el cursor para ver cuántas)' : ''}.</p>}
       </section>
 
       <section className="tarjeta">
         <div className="cabecera-tabla">
-          <h2>{esDia ? 'Casos del día' : 'Casos de la semana'} ({casos.length})</h2>
+          <h2>{esDia ? 'Casos del día' : periodo.modo === 'rango' ? 'Casos del periodo' : 'Casos de la semana'} ({casos.length})</h2>
           <div className="controles">
             <input type="search" aria-label="Filtrar casos" placeholder="Filtrar por texto…" value={texto} onChange={(e) => setTexto(e.target.value)} />
             <button className="btn" onClick={exportar} disabled={casos.length === 0}>Exportar a Excel</button>

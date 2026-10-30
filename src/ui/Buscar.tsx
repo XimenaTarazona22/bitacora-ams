@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { buscarCasos, casosRelacionados, fichaCaso, registrosDelCaso } from '../dominio/casos';
 import type { ConfigApp } from '../dominio/config';
 import { estadoSinPrefijo, formatearHoras } from '../dominio/formato';
-import { type Periodo, etiquetaDia, etiquetaSemana, rangoPeriodo, semanaLV } from '../dominio/periodos';
+import { type Periodo, etiquetaDia, etiquetaPeriodo } from '../dominio/periodos';
 import { resumenPorEstado } from '../dominio/resumenActividades';
 import type { Registro } from '../dominio/tipos';
 import { BarrasSemanales } from './BarrasSemanales';
@@ -71,7 +71,7 @@ export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso }: Pro
     } else if (e.key === 'Escape') setAbierto(false);
   }
 
-  const semana = periodo.modo === 'semana' ? etiquetaSemana(semanaLV(periodo.ancla)) : etiquetaDia(rangoPeriodo(periodo).desde);
+  const etiquetaHoras = periodo.modo === 'semana' ? 'Horas de la semana' : periodo.modo === 'dia' ? 'Horas del día' : 'Horas del periodo';
 
   function exportar() {
     if (!ficha) return;
@@ -182,7 +182,7 @@ export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso }: Pro
               <div className="rotulo">Periodo</div>
               <div className="valor" style={{ fontSize: 18, lineHeight: 1.6 }}>{ficha.primera ? `${etiquetaDia(ficha.primera)} –` : '—'}<br />{ficha.ultima ? etiquetaDia(ficha.ultima) : ''}</div>
             </div>
-            <div className="indicador"><div className="rotulo">Horas de la semana</div><div className="valor">{h(ficha.horasSemana)}</div><div className="detalle">{semana}</div></div>
+            <div className="indicador"><div className="rotulo">{etiquetaHoras}</div><div className="valor">{h(ficha.horasSemana)}</div><div className="detalle">{etiquetaPeriodo(periodo)}</div></div>
           </section>
 
           {ficha.horasFinDeSemana > 0 && (
