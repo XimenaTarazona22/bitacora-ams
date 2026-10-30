@@ -34,7 +34,12 @@ export interface ResultadoLectura {
   hojasIgnoradas: string[];
 }
 
-export type ClaseCaso = 'valido' | 'sin_caso' | 'no_reconocido';
+/** Alertas por registro. La jornada larga es por consultor y día, ver reglas.jornadasLargas. */
+export type TipoAlerta =
+  | 'sinCaso' | 'sinEstado' | 'sinActividades' | 'casoNoReconocido'
+  | 'finDeSemana' | 'horasInvalidas' | 'franjaCruzada' | 'sinFecha';
+
+export type ClaseCaso ='valido' | 'sin_caso' | 'no_reconocido';
 
 export interface ConfigCasos {
   /** Valores (ya normalizados) que significan «sin número de caso». */

@@ -1,85 +1,67 @@
-import { useRef, useState, type DragEvent } from 'react';
-import { soportaFSA, textoLectura } from '../almacenamiento/archivo';
+import { useMemo, useState } from 'react';
+import { textoLectura } from '../almacenamiento/archivo';
+import { filtrar } from '../dominio/agregaciones';
+import { CONFIG_DEFECTO } from '../dominio/config';
+import { type Periodo, hoyISO, periodoInicial, rangoCompleto } from '../dominio/periodos';
+import { evaluarAlertas, resumenRevision } from '../dominio/reglas';
+import type { Registro } from '../dominio/tipos';
+import { Conexion } from './Conexion';
+import { Lateral, type Vista } from './Lateral';
+import { Tablero } from './Tablero';
 import { useBitacora } from './useBitacora';
+import './estilos.css';
 
-const boton = { minHeight: 44, padding: '0 16px', cursor: 'pointer', marginRight: 8 } as const;
+const SIN_REGISTROS: Registro[] = [];
+const TITULOS: Record<Exclude<Vista, 'tablero'>, string> = {
+  buscar: 'Buscar caso',
+  informe: 'Informe para cliente',
+  revisar: 'Registros a revisar',
+  config: 'Configuración',
+};
 
 export function App() {
   const b = useBitacora();
-  const entrada = useRef<HTMLInputElement>(null);
-  const [arrastrando, setArrastrando] = useState(false);
+  const [vista, setVista] = useState<Vista>('tablero');
+  const [cfg] = useState(CONFIG_DEFECTO);
+  const [periodoUsuario, setPeriodo] = useState<Periodo | null>(null);
 
-  function alSoltar(e: DragEvent) {
-    e.preventDefault();
-    setArrastrando(false);
-    const f = e.dataTransfer.files[0];
-    if (f) void b.cargarArchivo(f);
-  }
+  const registros = b.resultado?.registros ?? SIN_REGISTROS;
+  const alertas = useMemo(() => evaluarAlertas(registros, cfg), [registros, cfg]);
+  const periodo = useMemo(
+    () => periodoUsuario ?? periodoInicial(registros.flatMap((r) => (r.fecha ? [r.fecha] : [])), hoyISO()),
+    [periodoUsuario, registros],
+  );
+  const aRevisar = useMemo(() => {
+    const rango = rangoCompleto(periodo);
+    const delPeriodo = filtrar(registros, { rango, clientes: [], consultores: [], incluirFinDeSemana: true });
+    return resumenRevision(delPeriodo, alertas, rango).total;
+  }, [registros, alertas, periodo]);
+
+  if (!b.resultado || !b.leidoEn) return <Conexion b={b} />;
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720, margin: '48px auto', padding: 16 }}>
-      <h1>Bitácora AMS · Informes de horas</h1>
-
-      <div
-        onDragOver={(e) => { e.preventDefault(); setArrastrando(true); }}
-        onDragLeave={() => setArrastrando(false)}
-        onDrop={alSoltar}
-        style={{ border: `2px dashed ${arrastrando ? '#1F5FBF' : '#DDE1E8'}`, borderRadius: 12, padding: 16 }}
-      >
-        {b.estado === 'iniciando' && <p>Buscando la bitácora…</p>}
-        {b.estado === 'cargando' && <p role="status">Leyendo la bitácora…</p>}
-
-        {b.estado === 'requiere_permiso' && (
-          <p>
-            Última bitácora usada: <strong>{b.nombre}</strong>
-          </p>
-        )}
-
-        <div>
-          {b.estado === 'requiere_permiso' && (
-            <button style={boton} onClick={() => void b.conectar()}>Conectar con la bitácora</button>
-          )}
-          {b.estado === 'listo' && (
-            <button style={boton} onClick={() => void b.actualizar()}>Actualizar</button>
-          )}
-          {(b.estado === 'sin_archivo' || b.estado === 'listo' || b.estado === 'requiere_permiso') &&
-            (soportaFSA() ? (
-              <button style={boton} onClick={() => void b.elegir()}>
-                {b.estado === 'sin_archivo' ? 'Elegir la bitácora…' : 'Cambiar archivo…'}
-              </button>
-            ) : (
-              <button style={boton} onClick={() => entrada.current?.click()}>Elegir la bitácora…</button>
-            ))}
-          {b.nombre && <button style={boton} onClick={() => void b.desconectar()}>Desconectar</button>}
-          <input
-            ref={entrada}
-            type="file"
-            accept=".xlsx,.xlsm"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void b.cargarArchivo(f);
-              e.target.value = '';
-            }}
+    <div className="app">
+      <Lateral vista={vista} onVista={setVista} aRevisar={aRevisar} b={b} />
+      <main className="contenido">
+        {vista === 'tablero' ? (
+          <Tablero
+            registros={registros}
+            alertas={alertas}
+            cfg={cfg}
+            periodo={periodo}
+            onPeriodo={setPeriodo}
+            textoLectura={textoLectura(b.leidoEn, registros.length).replace(/ · .*$/, '')}
+            onActualizar={() => void b.actualizar()}
+            onVerRevision={() => setVista('revisar')}
+            onVerCaso={() => setVista('buscar')}
           />
-        </div>
-        <p style={{ color: '#555', fontSize: 14 }}>
-          {soportaFSA() ? 'También puedes arrastrar el archivo .xlsx hasta aquí.' : 'Tu navegador no puede recordar el archivo: usa Edge o Chrome, o arrástralo hasta aquí.'}
-        </p>
-      </div>
-
-      {b.error && <p role="alert" style={{ background: '#FFF4E5', color: '#7A3E00', padding: 12, borderRadius: 8 }}>{b.error}</p>}
-      {b.aviso && <p role="status" style={{ color: '#555' }}>{b.aviso}</p>}
-
-      {b.resultado && b.leidoEn && (
-        <section aria-live="polite">
-          <p>
-            <strong>{b.nombre}</strong>: {b.resultado.hojasConsultor.length} hojas de consultor,{' '}
-            {b.resultado.registros.length} registros
-          </p>
-          <p style={{ color: '#555' }}>{textoLectura(b.leidoEn, b.resultado.registros.length)}</p>
-        </section>
-      )}
-    </main>
+        ) : (
+          <header>
+            <h1>{TITULOS[vista]}</h1>
+            <p className="subtitulo">Esta sección se construye en una fase posterior.</p>
+          </header>
+        )}
+      </main>
+    </div>
   );
 }
