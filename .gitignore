@@ -6,3 +6,6 @@ muestras/
 *.log
 test-results/
 playwright-report/
+
+.claude/
+t-fuente.pdf
