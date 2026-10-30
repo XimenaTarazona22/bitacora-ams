@@ -6,7 +6,8 @@ import { leerLibro } from '../src/dominio/leerLibro';
 import type { Periodo } from '../src/dominio/periodos';
 import { actividadesUnicas, limpiarActividad, resumenPorEstado, textoRepresentativo } from '../src/dominio/resumenActividades';
 
-const cargar = (ruta: string) => leerLibro(new Uint8Array(readFileSync(ruta))).registros;
+// Sin la copia real (p. ej. en CI) devuelve vacío: los bloques que la usan se saltan, pero su cuerpo se evalúa igual.
+const cargar = (ruta: string) => (existsSync(ruta) ? leerLibro(new Uint8Array(readFileSync(ruta))).registros : []);
 const SEMANA: Periodo = { modo: 'semana', ancla: '2026-10-21' };
 
 describe('limpiarActividad', () => {

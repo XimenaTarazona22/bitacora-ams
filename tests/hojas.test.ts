@@ -66,7 +66,7 @@ describe('hojas con fórmulas hasta el final de la hoja', () => {
 const completa = 'muestras/Bitácora completa.xlsx';
 describe.skipIf(!existsSync(completa))('bitácora real completa (22 consultores, hoja consolidada y filas fantasma)', () => {
   const t0 = Date.now();
-  const r = leerLibro(new Uint8Array(readFileSync(completa)));
+  const r = existsSync(completa) ? leerLibro(new Uint8Array(readFileSync(completa))) : leerLibro(new Uint8Array(readFileSync("fixtures/bitacora-sintetica.xlsx")));
   const segundos = (Date.now() - t0) / 1000;
 
   it('lee solo las hojas de consultor y salta «Base de Datos»', () => {

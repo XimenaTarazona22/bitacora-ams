@@ -7,7 +7,8 @@ import { rangoCompleto } from '../src/dominio/periodos';
 import { evaluarAlertas, jornadasLargas } from '../src/dominio/reglas';
 import { aplicarFiltros, conteosPorTipo, filasRevision, textoPorConsultor } from '../src/dominio/revision';
 
-const cargar = (ruta: string) => leerLibro(new Uint8Array(readFileSync(ruta))).registros;
+// Sin la copia real (p. ej. en CI) devuelve vacío: los bloques que la usan se saltan, pero su cuerpo se evalúa igual.
+const cargar = (ruta: string) => (existsSync(ruta) ? leerLibro(new Uint8Array(readFileSync(ruta))).registros : []);
 const armar = (regs: ReturnType<typeof cargar>, umbral = CONFIG_DEFECTO.jornadaLarga) =>
   filasRevision(regs, evaluarAlertas(regs, CONFIG_DEFECTO), jornadasLargas(regs, umbral));
 

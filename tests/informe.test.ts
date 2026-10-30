@@ -7,7 +7,8 @@ import {
 import { leerLibro } from '../src/dominio/leerLibro';
 import { esSemanaLV, etiquetaLarga } from '../src/dominio/periodos';
 
-const cargar = (ruta: string) => leerLibro(new Uint8Array(readFileSync(ruta))).registros;
+// Sin la copia real (p. ej. en CI) devuelve vacío: los bloques que la usan se saltan, pero su cuerpo se evalúa igual.
+const cargar = (ruta: string) => (existsSync(ruta) ? leerLibro(new Uint8Array(readFileSync(ruta))).registros : []);
 const SEMANA = { desde: '2026-10-19', hasta: '2026-10-23' };
 const EMITIDO = '2026-10-29';
 const r2 = (n: number) => Math.round(n * 100) / 100;

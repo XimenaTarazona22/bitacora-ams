@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { leerLibro } from '../src/dominio/leerLibro';
 
-const leer = (ruta: string) => leerLibro(new Uint8Array(readFileSync(ruta)));
+// Sin la copia real (p. ej. en CI) devuelve vacío: el bloque se salta, pero su cuerpo se evalúa igual.
+const leer = (ruta: string) => (existsSync(ruta) ? leerLibro(new Uint8Array(readFileSync(ruta))) : { ...leerLibro(new Uint8Array(readFileSync("fixtures/bitacora-sintetica.xlsx"))), registros: [] });
 
 describe('fixture sintético', () => {
   const r = leer('fixtures/bitacora-sintetica.xlsx');

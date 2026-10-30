@@ -9,7 +9,8 @@ import { semanaLV } from '../src/dominio/periodos';
 import { evaluarAlertas } from '../src/dominio/reglas';
 import { crearPdf, definicionInforme } from '../src/pdf/informeCliente';
 
-const bytes = (ruta: string) => new Uint8Array(readFileSync(ruta));
+// Sin la copia real (p. ej. en CI) devuelve vacío: el bloque se salta, pero su cuerpo se evalúa igual.
+const bytes = (ruta: string) => new Uint8Array(existsSync(ruta) ? readFileSync(ruta) : []);
 const SEMANA = semanaLV('2026-10-21');
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
