@@ -36,4 +36,4 @@ scripts/       generarFixture.mjs
 ## Valores de aceptación (copia real, semana lun 19 – vie 23 oct 2026)
 92 h · 48 registros · 20 casos · 5 clientes (ACH 56,5; Davivienda ERP 20; Davivienda HCM 8,5; U. Alberto H 4; SDS 3) · Camilo 49 h, Edwin 43 h.
 
-**Discrepancia conocida:** el prompt dice TASK0050017 = 39 registros / 116,5 h. Eso sale con comparación exacta; 4 filas de Edwin V (39, 41, 43, 44) traen `TASK0050017 ` con espacio final. Con la normalización pedida (recortar espacios) son **43 registros / 134,5 h**. Las pruebas usan los valores recortados. Pendiente confirmar con la usuaria.
+**Decisión confirmada:** el prompt dice TASK0050017 = 39 registros / 116,5 h (18 sep – 27 oct, acumulado al 23 oct 99,5 h). Eso sale con comparación exacta; 4 filas de Edwin V (39, 41, 43, 44, de agosto) traen `TASK0050017 ` con espacio final. La usuaria confirmó que **son el mismo caso**: con la normalización (recortar espacios) son **43 registros / 134,5 h, 24 ago – 27 oct, acumulado al 23 oct 117,5 h**. Las pruebas usan esos valores. El resto de cifras de la semana 19–23 oct coincide con el prompt.

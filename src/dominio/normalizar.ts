@@ -1,7 +1,7 @@
 import type { ClaseCaso, ConfigCasos, Registro } from './tipos';
 
 export const CONFIG_CASOS_DEFECTO: ConfigCasos = {
-  sinCaso: ['', '0', 'SIN CASO', 'SINCASO', 'SIN-CASO', 'N/A', 'NA', '-'],
+  sinCaso: ['0', 'SIN CASO', 'SINCASO', 'SIN-CASO', 'N/A', 'NA', '-'],
   patrones: [
     '^\\d+$',
     '^(TASK|PRB|INC|RITM|REQ|CHG|SCTASK|SP)\\d+$',
@@ -97,6 +97,7 @@ export function normalizarCaso(v: unknown): string {
 
 export function clasificarCaso(caso: string, cfg: ConfigCasos = CONFIG_CASOS_DEFECTO): ClaseCaso {
   const c = caso.toUpperCase();
+  if (c === '') return 'sin_caso'; // el caso vacío siempre es «sin caso»
   if (cfg.sinCaso.some((s) => s.toUpperCase() === c)) return 'sin_caso';
   if (cfg.patrones.some((p) => new RegExp(p, 'i').test(caso))) return 'valido';
   if (cfg.listaBlanca.some((n) => n.toUpperCase() === c)) return 'valido';
