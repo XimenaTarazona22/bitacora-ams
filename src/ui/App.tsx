@@ -5,6 +5,7 @@ import { CONFIG_DEFECTO } from '../dominio/config';
 import { type Periodo, hoyISO, periodoInicial, rangoCompleto } from '../dominio/periodos';
 import { evaluarAlertas, resumenRevision } from '../dominio/reglas';
 import type { Registro } from '../dominio/tipos';
+import { Buscar } from './Buscar';
 import { Conexion } from './Conexion';
 import { Lateral, type Vista } from './Lateral';
 import { Tablero } from './Tablero';
@@ -12,8 +13,7 @@ import { useBitacora } from './useBitacora';
 import './estilos.css';
 
 const SIN_REGISTROS: Registro[] = [];
-const TITULOS: Record<Exclude<Vista, 'tablero'>, string> = {
-  buscar: 'Buscar caso',
+const TITULOS: Record<Exclude<Vista, 'tablero' | 'buscar'>, string> = {
   informe: 'Informe para cliente',
   revisar: 'Registros a revisar',
   config: 'Configuración',
@@ -24,6 +24,7 @@ export function App() {
   const [vista, setVista] = useState<Vista>('tablero');
   const [cfg] = useState(CONFIG_DEFECTO);
   const [periodoUsuario, setPeriodo] = useState<Periodo | null>(null);
+  const [caso, setCaso] = useState<string | null>(null);
 
   const registros = b.resultado?.registros ?? SIN_REGISTROS;
   const alertas = useMemo(() => evaluarAlertas(registros, cfg), [registros, cfg]);
@@ -53,8 +54,10 @@ export function App() {
             textoLectura={textoLectura(b.leidoEn, registros.length).replace(/ · .*$/, '')}
             onActualizar={() => void b.actualizar()}
             onVerRevision={() => setVista('revisar')}
-            onVerCaso={() => setVista('buscar')}
+            onVerCaso={(c) => { setCaso(c); setVista('buscar'); }}
           />
+        ) : vista === 'buscar' ? (
+          <Buscar registros={registros} cfg={cfg} periodo={periodo} caso={caso} onCaso={setCaso} />
         ) : (
           <header>
             <h1>{TITULOS[vista]}</h1>

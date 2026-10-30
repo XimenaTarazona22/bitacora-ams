@@ -126,3 +126,16 @@ tfoot td { font-weight: 600; border-bottom: 0; }
 }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Buscar caso */
+.buscador { position: relative; }
+.buscador input { width: 100%; min-height: 56px; font-size: 18px; padding: 0 18px; border: 2px solid var(--borde); border-radius: 12px; background: #fff; }
+.buscador input:focus { border-color: var(--acento); outline: none; box-shadow: 0 0 0 3px rgba(31, 95, 191, .25); }
+.sugerencias { position: absolute; z-index: 6; top: 62px; left: 0; right: 0; margin: 0; padding: 4px; list-style: none; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(22, 32, 58, .14); }
+.sugerencias li { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; min-height: 44px; padding: 4px 12px; border-radius: 8px; cursor: pointer; }
+.sugerencias li:hover, .sugerencias li.activa { background: var(--fondo); }
+.sug-titulo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sug-meta { color: var(--suave); font-size: 13px; white-space: nowrap; }
+.ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 24px; margin: 16px 0 0; }
+.ficha dt { font-size: 13px; color: var(--suave); }
+.ficha dd { margin: 2px 0 0; }
