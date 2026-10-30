@@ -158,3 +158,18 @@ tfoot td { font-weight: 600; border-bottom: 0; }
 .rejilla-cfg { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px 24px; align-items: start; }
 .error-campo { color: var(--alerta-texto); background: var(--alerta-fondo); padding: 4px 8px; border-radius: 6px; }
 h3 { font-size: 15px; margin: 20px 0 8px; }
+
+/* Informe para cliente */
+.informe { display: grid; grid-template-columns: minmax(340px, 480px) 1fr; gap: 20px; align-items: start; }
+.informe-form { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.informe-vista { position: sticky; top: 16px; height: calc(100vh - 32px); background: #fff; border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; }
+.informe-vista iframe { width: 100%; height: 100%; border: 0; }
+.grupo { border: 0; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 4px; }
+.grupo legend { padding: 0; font-weight: 500; margin-bottom: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.chips li { display: inline-flex; align-items: center; gap: 4px; background: #eef1f6; border-radius: 999px; padding: 2px 4px 2px 12px; font-size: 13px; }
+.chips button { border: 0; background: none; min-width: 32px; min-height: 32px; border-radius: 999px; font-size: 16px; }
+.chips button:hover { background: #dde1e8; }
+.nota h2 { margin-bottom: 8px; }
+@media (max-width: 1100px) { .informe { grid-template-columns: 1fr; } .informe-vista { position: static; height: 70vh; } }
+.informe .campo textarea { font-family: inherit; font-size: 14px; }

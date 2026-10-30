@@ -7,6 +7,7 @@ import { resumenPorEstado } from '../dominio/resumenActividades';
 import type { Registro } from '../dominio/tipos';
 import { BarrasSemanales } from './BarrasSemanales';
 import { exportarExcel } from './exportarExcel';
+import type { PresetInforme } from './Informe';
 
 interface Props {
   registros: Registro[];
@@ -15,6 +16,8 @@ interface Props {
   /** Caso a mostrar (viene del enlace en el Tablero). */
   caso: string | null;
   onCaso: (c: string | null) => void;
+  /** Abre el informe para cliente con este caso y todo su periodo. */
+  onPdfCaso: (p: PresetInforme) => void;
 }
 
 const LARGO = 180;
@@ -24,7 +27,7 @@ function Estado({ estado }: { estado: string }) {
   return <span className={`pildora${/solucionad/i.test(estado) ? ' ok' : ''}`}>{estadoSinPrefijo(estado)}</span>;
 }
 
-export function Buscar({ registros, cfg, periodo, caso, onCaso }: Props) {
+export function Buscar({ registros, cfg, periodo, caso, onCaso, onPdfCaso }: Props) {
   const [consulta, setConsulta] = useState(caso ?? '');
   const [activo, setActivo] = useState(-1);
   const [abierto, setAbierto] = useState(false);
@@ -138,7 +141,7 @@ export function Buscar({ registros, cfg, periodo, caso, onCaso }: Props) {
                 <p style={{ margin: '4px 0 0' }}>{ficha.titulo || 'Sin título'}</p>
               </div>
               <div className="controles">
-                <button className="btn" disabled title="Disponible en la fase de informes">PDF de este caso</button>
+                <button className="btn btn-primario" onClick={() => onPdfCaso({ cliente: ficha.cliente, caso: ficha.caso, rango: { desde: ficha.primera ?? '', hasta: ficha.ultima ?? '' } })} disabled={!ficha.primera}>PDF de este caso</button>
                 <button className="btn" onClick={exportar}>Exportar registros</button>
               </div>
             </div>

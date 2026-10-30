@@ -23,6 +23,11 @@ Comandos: `npm test` · `npm run build` · `npm run fixture` (regenera `fixtures
 - Cada Registro conserva `hoja` y `fila` de origen.
 - Normalización de caso: se recortan espacios (incluso al final: `TASK0050017 `), códigos alfanuméricos en mayúsculas, números sin decimales.
 
+## PDF (pdfmake)
+- Fuentes: IBM Plex Sans 400/600 y Mono 400 incrustadas como **WOFF** vía `?inline` (pdfmake no lee WOFF2). El subconjunto de Plex Mono no trae el espacio: solo los códigos sin espacios usan mono (`fuenteCaso`), el resto va en Plex Sans.
+- `src/dominio/informe.ts` arma el modelo (filas, acumulados, resúmenes, verificación previa); `src/pdf/informeCliente.ts` lo convierte en el documento. Los resúmenes editados se guardan en IndexedDB por cliente, caso y periodo.
+- Acumulado = todas las horas del caso hasta el fin del periodo (incluye fin de semana), igual que «Buscar caso».
+
 ## Estructura
 ```
 src/dominio/   tipos, normalizar, leerLibro (puro, testeable en Node)

@@ -98,3 +98,23 @@ export function hoyISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+const DIAS_LARGOS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+const largo = (iso: string) => {
+  const [a, m, d] = iso.split('-').map(Number) as [number, number, number];
+  return { dia: DIAS_LARGOS[diaSemana(iso)]!, d, mes: MESES_LARGOS[m - 1]!, anio: a };
+};
+
+/** «Lunes 19 – viernes 23 de octubre de 2026»; un solo día: «Jueves 22 de octubre de 2026». */
+export function etiquetaLarga(r: Rango): string {
+  const a = largo(r.desde);
+  const b = largo(r.hasta);
+  if (r.desde === r.hasta) return capital(`${a.dia} ${a.d} de ${a.mes} de ${a.anio}`);
+  const ini = a.anio !== b.anio ? `${a.dia} ${a.d} de ${a.mes} de ${a.anio}` : a.mes !== b.mes ? `${a.dia} ${a.d} de ${a.mes}` : `${a.dia} ${a.d}`;
+  return capital(`${ini} – ${b.dia} ${b.d} de ${b.mes} de ${b.anio}`);
+}
+
+/** true si el rango es exactamente una semana lun–vie. */
+export const esSemanaLV = (r: Rango) => r.desde === lunesDe(r.desde) && r.hasta === sumarDias(r.desde, 4);

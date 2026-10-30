@@ -8,6 +8,7 @@ import type { Registro } from '../dominio/tipos';
 import { Buscar } from './Buscar';
 import { Conexion } from './Conexion';
 import { Configuracion } from './Configuracion';
+import { Informe, type PresetInforme } from './Informe';
 import { Lateral, type Vista } from './Lateral';
 import { Revisar } from './Revisar';
 import { Tablero } from './Tablero';
@@ -16,7 +17,6 @@ import { useConfig } from './useConfig';
 import './estilos.css';
 
 const SIN_REGISTROS: Registro[] = [];
-const TITULOS: Record<'informe', string> = { informe: 'Informe para cliente' };
 
 export function App() {
   const b = useBitacora();
@@ -24,6 +24,7 @@ export function App() {
   const { cfg, setCfg, logo, setLogo } = useConfig();
   const [periodoUsuario, setPeriodo] = useState<Periodo | null>(null);
   const [caso, setCaso] = useState<string | null>(null);
+  const [preset, setPreset] = useState<PresetInforme | null>(null);
 
   const brutos = b.resultado?.registros ?? SIN_REGISTROS;
   const registros = useMemo(() => aplicarAlias(brutos, cfg.aliasClientes), [brutos, cfg.aliasClientes]);
@@ -57,16 +58,16 @@ export function App() {
             onVerCaso={(c) => { setCaso(c); setVista('buscar'); }}
           />
         ) : vista === 'buscar' ? (
-          <Buscar registros={registros} cfg={cfg} periodo={periodo} caso={caso} onCaso={setCaso} />
+          <Buscar
+            registros={registros} cfg={cfg} periodo={periodo} caso={caso} onCaso={setCaso}
+            onPdfCaso={(p) => { setPreset(p); setVista('informe'); }}
+          />
         ) : vista === 'revisar' ? (
           <Revisar registros={registros} alertas={alertas} cfg={cfg} onCfg={setCfg} periodo={periodo} onPeriodo={setPeriodo} />
         ) : vista === 'config' ? (
           <Configuracion cfg={cfg} onCfg={setCfg} logo={logo} onLogo={setLogo} b={b} />
         ) : (
-          <header>
-            <h1>{TITULOS.informe}</h1>
-            <p className="subtitulo">Esta sección se construye en una fase posterior.</p>
-          </header>
+          <Informe registros={registros} cfg={cfg} logo={logo} periodo={periodo} preset={preset} onPresetUsado={() => setPreset(null)} />
         )}
       </main>
     </div>
