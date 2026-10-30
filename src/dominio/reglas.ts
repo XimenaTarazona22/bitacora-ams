@@ -81,16 +81,21 @@ export interface ResumenRevision {
   total: number;
   habiles: number;
   finDeSemana: number;
+  /** Registros sin fecha: no pertenecen a ningún periodo, se cuentan siempre. */
+  sinFecha: number;
 }
 
 /** Cuenta los registros con alertas dentro del rango (ya filtrados por cliente/consultor si aplica). */
 export function resumenRevision(regs: Registro[], alertas: Alertas, rango: Rango): ResumenRevision {
   let habiles = 0;
   let finDeSemana = 0;
+  let sinFecha = 0;
   for (const r of regs) {
-    if (!r.fecha || !enRango(r.fecha, rango) || !alertas.has(r)) continue;
-    if (esFinDeSemana(r.fecha)) finDeSemana++;
+    if (!alertas.has(r)) continue;
+    if (!r.fecha) sinFecha++;
+    else if (!enRango(r.fecha, rango)) continue;
+    else if (esFinDeSemana(r.fecha)) finDeSemana++;
     else habiles++;
   }
-  return { total: habiles + finDeSemana, habiles, finDeSemana };
+  return { total: habiles + finDeSemana + sinFecha, habiles, finDeSemana, sinFecha };
 }

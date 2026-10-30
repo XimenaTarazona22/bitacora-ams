@@ -5,11 +5,12 @@ import {
 import type { ConfigApp } from '../dominio/config';
 import { estadoSinPrefijo, formatearHoras, formatearNumero } from '../dominio/formato';
 import {
-  type Periodo, diasDelRango, esFinDeSemana, etiquetaDiaCorta, etiquetaPeriodo, lunesDe, moverPeriodo, rangoCompleto, rangoPeriodo,
+  type Periodo, diasDelRango, etiquetaDiaCorta, rangoCompleto, rangoPeriodo,
 } from '../dominio/periodos';
 import { type Alertas, jornadasLargas, resumenRevision } from '../dominio/reglas';
 import type { Registro } from '../dominio/tipos';
 import { BarrasHorizontales } from './BarrasHorizontales';
+import { ControlPeriodo } from './ControlPeriodo';
 import { MultiSelect } from './MultiSelect';
 import { exportarExcel } from './exportarExcel';
 
@@ -49,7 +50,9 @@ export function Tablero(p: Props) {
   const filtroCompleto = { ...filtro, rango: rangoCompleto(periodo), incluirFinDeSemana: true };
 
   const regs = filtrar(registros, filtro);
-  const regsCompletos = filtrar(registros, filtroCompleto);
+  // Los registros sin fecha no tienen periodo: siempre cuentan como por revisar.
+  const sinFecha = registros.filter((r) => !r.fecha && (clientes.length === 0 || clientes.includes(r.cliente)) && (consultores.length === 0 || consultores.includes(r.consultor)));
+  const regsCompletos = [...filtrar(registros, filtroCompleto), ...sinFecha];
 
   const ind = indicadores(regs, cfg);
   const revision = resumenRevision(regsCompletos, p.alertas, rangoCompleto(periodo));
@@ -94,15 +97,7 @@ export function Tablero(p: Props) {
       </header>
 
       <div className="controles">
-        <div className="segmentado" role="group" aria-label="Vista">
-          <button aria-pressed={esDia} onClick={() => p.onPeriodo({ modo: 'dia', ancla: esFinDeSemana(periodo.ancla) ? lunesDe(periodo.ancla) : periodo.ancla })}>Diario</button>
-          <button aria-pressed={!esDia} onClick={() => p.onPeriodo({ modo: 'semana', ancla: periodo.ancla })}>Semanal</button>
-        </div>
-        <div className="periodo">
-          <button aria-label={esDia ? 'Día anterior' : 'Semana anterior'} onClick={() => p.onPeriodo(moverPeriodo(periodo, -1))}>‹</button>
-          <span className="etiqueta" aria-live="polite">{etiquetaPeriodo(periodo)}</span>
-          <button aria-label={esDia ? 'Día siguiente' : 'Semana siguiente'} onClick={() => p.onPeriodo(moverPeriodo(periodo, 1))}>›</button>
-        </div>
+        <ControlPeriodo periodo={periodo} onPeriodo={p.onPeriodo} />
         <MultiSelect etiqueta="Cliente" opciones={valoresUnicos(registros, 'cliente')} seleccion={clientes} onCambio={setClientes} />
         <MultiSelect etiqueta="Consultor" opciones={valoresUnicos(registros, 'consultor')} seleccion={consultores} onCambio={setConsultores} />
         <button className="btn" onClick={p.onActualizar}>Actualizar</button>
@@ -129,7 +124,7 @@ export function Tablero(p: Props) {
         <button className="indicador alerta" onClick={p.onVerRevision}>
           <div className="rotulo">Registros a revisar</div>
           <div className="valor">{revision.total}</div>
-          <div className="detalle">{revision.habiles} en días hábiles · {revision.finDeSemana} en fin de semana</div>
+          <div className="detalle">{revision.habiles} en días hábiles · {revision.finDeSemana} en fin de semana{revision.sinFecha > 0 && ` · ${revision.sinFecha} sin fecha`}</div>
         </button>
       </section>
 

@@ -8,21 +8,21 @@ import type { Registro } from '../dominio/tipos';
 import { Buscar } from './Buscar';
 import { Conexion } from './Conexion';
 import { Lateral, type Vista } from './Lateral';
+import { Revisar } from './Revisar';
 import { Tablero } from './Tablero';
 import { useBitacora } from './useBitacora';
 import './estilos.css';
 
 const SIN_REGISTROS: Registro[] = [];
-const TITULOS: Record<Exclude<Vista, 'tablero' | 'buscar'>, string> = {
+const TITULOS: Record<Exclude<Vista, 'tablero' | 'buscar' | 'revisar'>, string> = {
   informe: 'Informe para cliente',
-  revisar: 'Registros a revisar',
   config: 'Configuración',
 };
 
 export function App() {
   const b = useBitacora();
   const [vista, setVista] = useState<Vista>('tablero');
-  const [cfg] = useState(CONFIG_DEFECTO);
+  const [cfg, setCfg] = useState(CONFIG_DEFECTO);
   const [periodoUsuario, setPeriodo] = useState<Periodo | null>(null);
   const [caso, setCaso] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export function App() {
   );
   const aRevisar = useMemo(() => {
     const rango = rangoCompleto(periodo);
-    const delPeriodo = filtrar(registros, { rango, clientes: [], consultores: [], incluirFinDeSemana: true });
+    const delPeriodo = [...filtrar(registros, { rango, clientes: [], consultores: [], incluirFinDeSemana: true }), ...registros.filter((r) => !r.fecha)];
     return resumenRevision(delPeriodo, alertas, rango).total;
   }, [registros, alertas, periodo]);
 
@@ -58,6 +58,8 @@ export function App() {
           />
         ) : vista === 'buscar' ? (
           <Buscar registros={registros} cfg={cfg} periodo={periodo} caso={caso} onCaso={setCaso} />
+        ) : vista === 'revisar' ? (
+          <Revisar registros={registros} alertas={alertas} cfg={cfg} onCfg={setCfg} periodo={periodo} onPeriodo={setPeriodo} />
         ) : (
           <header>
             <h1>{TITULOS[vista]}</h1>

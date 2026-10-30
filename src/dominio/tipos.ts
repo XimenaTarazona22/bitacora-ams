@@ -39,7 +39,10 @@ export type TipoAlerta =
   | 'sinCaso' | 'sinEstado' | 'sinActividades' | 'casoNoReconocido'
   | 'finDeSemana' | 'horasInvalidas' | 'franjaCruzada' | 'sinFecha';
 
-export type ClaseCaso ='valido' | 'sin_caso' | 'no_reconocido';
+/** Reglas activables: las de cada registro más la jornada larga (por consultor y día). */
+export type ReglaId = TipoAlerta | 'jornadaLarga';
+
+export type ClaseCaso = 'valido' | 'sin_caso' | 'no_reconocido';
 
 export interface ConfigCasos {
   /** Valores (ya normalizados) que significan «sin número de caso». */

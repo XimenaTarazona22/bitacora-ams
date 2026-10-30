@@ -1,5 +1,5 @@
 import { CONFIG_CASOS_DEFECTO } from './normalizar';
-import type { ConfigCasos, TipoAlerta } from './tipos';
+import type { ConfigCasos, ReglaId } from './tipos';
 
 export interface ConfigApp {
   casos: ConfigCasos;
@@ -8,7 +8,7 @@ export interface ConfigApp {
   /** Horas por consultor y día a partir de las cuales la jornada se marca como larga. */
   jornadaLarga: number;
   formatoHoras: 'decimal' | 'hm';
-  reglasActivas: Record<TipoAlerta, boolean>;
+  reglasActivas: Record<ReglaId, boolean>;
 }
 
 export const CONFIG_DEFECTO: ConfigApp = {
@@ -25,5 +25,6 @@ export const CONFIG_DEFECTO: ConfigApp = {
     horasInvalidas: true,
     franjaCruzada: true,
     sinFecha: true,
+    jornadaLarga: true,
   },
 };
